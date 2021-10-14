@@ -8,7 +8,7 @@ from pyspark.sql.functions import regexp_replace
 from pyspark.sql.types import DoubleType
 from cdr_trajectories.constants import spark
 
-MPN_File = '/Users/apple/DegreeProject/pyspark_cdr/data/mpn/mpn20190117volunteers2.csv'
+MPN_File = 'data/mpn/*'
 
 class MPN:
 
@@ -40,5 +40,6 @@ class MPN:
 
 if __name__ == "__main__":
     mpn_data = MPN(MPN_File).process()
-    print(mpn_data)
+    print(mpn_data.head())
+    print(mpn_data.count())
 
