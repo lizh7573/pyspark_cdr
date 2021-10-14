@@ -1,0 +1,9 @@
+pyspark
+pytest
+pandas
+scipy
+matplotlib
+pytest-mock
+wheel
+setuptools
+twine
