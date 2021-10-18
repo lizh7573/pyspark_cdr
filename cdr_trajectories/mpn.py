@@ -8,21 +8,17 @@ from pyspark.sql.functions import regexp_replace
 from pyspark.sql.types import DoubleType
 from cdr_trajectories.constants import spark
 
-MPN_File = 'data/mpn/*'
+mpn_file = 'data/mpn/*'
 
-class MPN:
+class mpn:
 
     def __init__(self, path):
         self.path = path
-        self.df = self.read()
-
-    def read(self):
-        df = spark.read.format("csv")\
+        self.df = spark.read.format("csv")\
             .option("inferSchema", "true")\
             .option("header", "true")\
             .option("sep", ";")\
             .load(self.path)
-        return df
 
     def process(self):
         self.df = self.df\
@@ -37,9 +33,12 @@ class MPN:
              .orderBy(['user_id', 'timestamp'])
         return self.df
 
+    def get_data(self):
+        self.process()
+        return self.df
 
-if __name__ == "__main__":
-    mpn_data = MPN(MPN_File).process()
-    print(mpn_data.head())
-    print(mpn_data.count())
+mpn_data = mpn(mpn_file).get_data()
+
+
+
 
