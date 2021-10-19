@@ -1,5 +1,7 @@
+Ipython
 pyspark
 pytest
+numpy
 pandas
 scipy
 matplotlib

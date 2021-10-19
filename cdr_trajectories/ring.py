@@ -158,7 +158,7 @@ class ring:
 
     
 ring_data = ring(adjNum_data, adjMem_data).get_data()
-print(ring_data.show(5))
+
 
     
 
