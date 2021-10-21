@@ -39,7 +39,8 @@ class mpn:
         return self.df
 
 mpn_data = mpn(mpn_file).get_data()
-print(mpn_data.show(50))
+
+
 
 
 

@@ -22,11 +22,22 @@ def prepare_for_plot(data, type_):
     return A
 
 
-def plot(matrix, fname, title):
+def plot_dense(matrix, fname, title):
     plt.figure(figsize = (20, 20))
-    plt.spy(matrix, markersize = 1, alpha = 0.2)
+    plt.imshow(matrix.todense())
+    plt.colorbar()
     plt.grid()
-    plt.xlabel("polygon", fontsize = 16)
-    plt.xlabel("polygon", fontsize = 16)
-    plt.title(title, fontsize = 20)
+    plt.xlabel("polygon", fontsize = 20)
+    plt.ylabel("polygon", fontsize = 20)
+    plt.title(title, fontsize = 30)
+    plt.savefig(os.path.join('outputs', fname))
+
+
+def plot_sparse(matrix, fname, title):
+    plt.figure(figsize = (20, 20))
+    plt.spy(matrix, markersize = 4, alpha = 0.25)
+    plt.grid()
+    plt.xlabel("polygon", fontsize = 20)
+    plt.ylabel("polygon", fontsize = 20)
+    plt.title(title, fontsize = 30)
     plt.savefig(os.path.join('outputs', fname))

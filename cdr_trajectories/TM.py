@@ -35,7 +35,8 @@ class TM:
 
     def states_normalize(self):
         window = Window.partitionBy(F.col('x'))
-        self.df = self.df.withColumn('TM_updates', F.col('TM_updates')/F.sum(F.col('TM_updates')).over(window))
+        self.df = self.df.withColumn('TM_updates', F.col('TM_updates')/F.sum(F.col('TM_updates')).over(window))\
+                         #.filter(F.col('TM_updates') >= 0.1)
         return self.df
 
     def make_tm(self):

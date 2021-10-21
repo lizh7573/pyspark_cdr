@@ -5,6 +5,7 @@ numpy
 pandas
 scipy
 matplotlib
+seaborn
 pytest-mock
 wheel
 setuptools
