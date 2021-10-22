@@ -1,6 +1,6 @@
 """
 Time Inhomogeneous Transition Matrix
-=================
+====================================
 """
 
 

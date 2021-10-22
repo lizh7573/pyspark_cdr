@@ -3,7 +3,7 @@ import numpy as np
 import scipy.sparse as sparse
 import matplotlib.pyplot as plt
 
-def transition_matrix_updates(states1, states2):
+def matrix_updates(states1, states2):
     update = [[float(el1[0]), float(el2[0]), el1[1]*el2[1]]
              for el1 in states1 for el2 in states2]
     return update

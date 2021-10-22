@@ -70,14 +70,14 @@ class ring_adjNum:
 
     def probability(self):    
         self.df = self.df.withColumn('voronoi_id', F.split(self.df['1st'], ' ').getItem(0))\
-                         .withColumn('selfProp', F.lit(ring_fraction[0]))\
-                         .withColumn('1st_adjNum', F.split(self.df['1st'], ' ').getItem(1).cast(IntegerType()))\
-                         .withColumn('1st_adjProp', ring_fraction[1]/F.col('1st_adjNum'))\
-                         .withColumn('2nd_adjNum', F.split(self.df['2nd'], ' ').getItem(1).cast(IntegerType()))\
-                         .withColumn('2nd_adjProp', ring_fraction[2]/F.col('2nd_adjNum'))\
-                         .withColumn('3rd_adjNum', F.split(self.df['3rd'], ' ').getItem(1).cast(IntegerType()))\
-                         .withColumn('3rd_adjProp', ring_fraction[3]/F.col('3rd_adjNum'))\
-                         .drop('1st', '2nd', '3rd')
+                    .withColumn('selfProp', F.lit(ring_fraction[0]))\
+                    .withColumn('1st_adjNum', F.split(self.df['1st'], ' ').getItem(1).cast(IntegerType()))\
+                    .withColumn('1st_adjProp', ring_fraction[1]/F.col('1st_adjNum'))\
+                    .withColumn('2nd_adjNum', F.split(self.df['2nd'], ' ').getItem(1).cast(IntegerType()))\
+                    .withColumn('2nd_adjProp', ring_fraction[2]/F.col('2nd_adjNum'))\
+                    .withColumn('3rd_adjNum', F.split(self.df['3rd'], ' ').getItem(1).cast(IntegerType()))\
+                    .withColumn('3rd_adjProp', ring_fraction[3]/F.col('3rd_adjNum'))\
+                    .drop('1st', '2nd', '3rd')
         return self.df
 
     def get_adjNum(self):
