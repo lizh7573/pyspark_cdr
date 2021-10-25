@@ -1,3 +1,9 @@
+"""
+User Defined Functions
+======================
+"""
+
+
 import os
 import numpy as np
 import scipy.sparse as sparse
@@ -35,7 +41,7 @@ def plot_dense(matrix, fname, title):
 
 def plot_sparse(matrix, fname, title):
     plt.figure(figsize = (20, 20))
-    plt.spy(matrix, markersize = 4, alpha = 0.25)
+    plt.spy(matrix, markersize = 10, alpha = 0.5)
     plt.grid()
     plt.xlabel("polygon", fontsize = 20)
     plt.ylabel("polygon", fontsize = 20)

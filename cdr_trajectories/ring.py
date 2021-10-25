@@ -134,7 +134,35 @@ class ring:
            .drop('1st_adjNum', '2nd_adjNum', '3rd_adjNum', 'temp1', 'temp2', 'temp3')
         return self.df
     
-    def neigh_prop(self):
+    def select_1ring(self):
+        self.df = self.df\
+            .select('row', 'voronoi_id', 'selfProp', '1st_adj', '1st_adjProp')
+        return self.df
+    
+    def select_2ring(self):
+        self.df = self.df\
+            .select('row', 'voronoi_id', 'selfProp', '1st_adj', '1st_adjProp', '2nd_adj', '2nd_adjProp')
+        return self.df
+
+    def neigh_prop_1ring(self):
+        self.df = self.df\
+           .withColumn('neighbors', F.concat('voronoi_id', F.lit(' '), '1st_adj'))\
+           .withColumn('props', F.concat('selfProp', '1st_adjProp'))\
+           .withColumn('neighbors', F.split(F.col('neighbors'), ' ').cast(ArrayType(IntegerType())))\
+           .withColumn('props', F.split(F.col('props'), ' ').cast(ArrayType(FloatType())))\
+           .drop('row', 'selfProp', '1st_adjProp', '1st_adj')
+        return self.df
+
+    def neigh_prop_2ring(self):
+        self.df = self.df\
+           .withColumn('neighbors', F.concat('voronoi_id', F.lit(' '), '1st_adj', F.lit(' '), '2nd_adj'))\
+           .withColumn('props', F.concat('selfProp', '1st_adjProp', '2nd_adjProp'))\
+           .withColumn('neighbors', F.split(F.col('neighbors'), ' ').cast(ArrayType(IntegerType())))\
+           .withColumn('props', F.split(F.col('props'), ' ').cast(ArrayType(FloatType())))\
+           .drop('row', 'selfProp', '1st_adjProp', '2nd_adjProp', '1st_adj', '2nd_adj')
+        return self.df
+
+    def neigh_prop_3ring(self):
         self.df = self.df\
            .withColumn('neighbors', F.concat('voronoi_id', F.lit(' '), '1st_adj', F.lit(' '), '2nd_adj', F.lit(' '), '3rd_adj'))\
            .withColumn('props', F.concat('selfProp', '1st_adjProp', '2nd_adjProp', '3rd_adjProp'))\
@@ -148,16 +176,37 @@ class ring:
             .withColumn('states', arrays_zip('neighbors', 'props'))
         return self.df
 
-    def get_data(self):
+    def get_1ring_data(self):
         self.join()
         self.concat()
         self.repeat()
-        self.neigh_prop()
+        self.select_1ring()
+        self.neigh_prop_1ring()
+        self.states()
+        return self.df
+
+    def get_2ring_data(self):
+        self.join()
+        self.concat()
+        self.repeat()
+        self.select_2ring()
+        self.neigh_prop_2ring()
+        self.states()
+        return self.df
+
+    def get_3ring_data(self):
+        self.join()
+        self.concat()
+        self.repeat()
+        self.neigh_prop_3ring()
         self.states()
         return self.df
 
     
-ring_data = ring(adjNum_data, adjMem_data).get_data()
+oneRing_data = ring(adjNum_data, adjMem_data).get_1ring_data()
+twoRing_data = ring(adjNum_data, adjMem_data).get_2ring_data()
+threeRing_data = ring(adjNum_data, adjMem_data).get_3ring_data()
+
 
 
     
