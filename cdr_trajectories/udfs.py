@@ -5,6 +5,7 @@ User Defined Functions
 
 
 import os
+from posixpath import dirname
 import numpy as np
 import scipy.sparse as sparse
 import matplotlib.pyplot as plt
@@ -42,25 +43,29 @@ def prepare_for_dense_plot(data, type_):
     return A
 
 
-def plot_sparse(matrix, fname, title):
+def plot_sparse(matrix, fname, title, dirname):
     plt.figure(figsize = (20, 20))
     plt.spy(matrix, markersize = 10, alpha = 0.5)
     plt.grid()
-    plt.xlabel("polygon", fontsize = 20)
-    plt.ylabel("polygon", fontsize = 20)
-    plt.title(title, fontsize = 30)
-    plt.savefig(os.path.join('outputs', fname))
+    plt.xticks(fontsize = 20)
+    plt.yticks(fontsize = 20)
+    plt.xlabel("polygon", fontsize = 30)
+    plt.ylabel("polygon", fontsize = 30)
+    plt.title(title, fontsize = 35)
+    plt.savefig(os.path.join(dirname, fname))
 
 
-def plot_dense(matrix, fname, title):
+def plot_dense(matrix, fname, title, dirname):
     plt.figure(figsize = (20, 20))
     plt.imshow(matrix.todense())
     plt.colorbar()
     plt.grid()
-    plt.xlabel("polygon", fontsize = 20)
-    plt.ylabel("polygon", fontsize = 20)
-    plt.title(title, fontsize = 30)
-    plt.savefig(os.path.join('outputs', fname))
+    plt.xticks(fontsize = 20)
+    plt.yticks(fontsize = 20)
+    plt.xlabel("polygon", fontsize = 30)
+    plt.ylabel("polygon", fontsize = 30)
+    plt.title(title, fontsize = 35)
+    plt.savefig(os.path.join(dirname, fname))
 
 
 

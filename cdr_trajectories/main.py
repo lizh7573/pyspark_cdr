@@ -17,6 +17,7 @@ from cdr_trajectories.udfs import prepare_for_sparse_plot, prepare_for_dense_plo
 trajectories = mpn_data.join(voronoi_data, ['avg_X', 'avg_Y'], how = 'inner')\
                        .orderBy(['user_id', 'timestamp'])
 
+# Deterministic Trajectories
 zeroRing_trajectories = trajectories.withColumn('neighbors', F.array('voronoi_id'))\
                                     .withColumn('props', F.array(F.lit(1.0)))\
                                     .withColumn('states', arrays_zip('neighbors', 'props'))\
@@ -24,12 +25,15 @@ zeroRing_trajectories = trajectories.withColumn('neighbors', F.array('voronoi_id
                                     .drop('avg_X', 'avg_Y', 'neighbors', 'props')
 
 deterministic_trajectories = zeroRing_trajectories
+deterministic_trajectories.toPandas().to_csv(os.path.join('outputs/determTraj', 'determTraj.csv'))
 
 tm_0 = TM(deterministic_trajectories).make_tm()
-plot_sparse(prepare_for_sparse_plot(tm_0, 'updates'), 'TM_0.png', 'Transition Matrix (Deterministic)')
+plot_sparse(prepare_for_sparse_plot(tm_0, 'updates'), 'TM_0.png', 
+           'Transition Matrix (Deterministic)', 'outputs/determTraj')
+tm_0.toPandas().to_csv(os.path.join('outputs/determTraj', 'tm_0.csv'))
 
 
-
+# Probabilistic Trajectories
 class Trajectories:
 
     def __init__(self, df, ring):
@@ -49,20 +53,34 @@ threeRing_trajectories = Trajectories(trajectories, threeRing_data).join()
 probabilistic_trajectories = threeRing_trajectories
 
 tm_1 = TM(oneRing_trajectories).make_tm()
-plot_dense(prepare_for_dense_plot(tm_1, 'updates'), 'TM_1.png', 'Transition Matrix (One Ring)')
+plot_dense(prepare_for_dense_plot(tm_1, 'updates'), 'TM_1.png',
+          'Transition Matrix (One Ring)', 'outputs/probTraj')
 tm_2 = TM(twoRing_trajectories).make_tm()
-plot_dense(prepare_for_dense_plot(tm_2, 'updates'), 'TM_2.png', 'Transition Matrix (Two Rings)')
+plot_dense(prepare_for_dense_plot(tm_2, 'updates'), 'TM_2.png', 
+          'Transition Matrix (Two Rings)', 'outputs/probTraj')
 tm_3 = TM(probabilistic_trajectories).make_tm()
-plot_dense(prepare_for_dense_plot(tm_3, 'updates'), 'TM_3.png', 'Transition Matrix (Three Rings)')
+plot_dense(prepare_for_dense_plot(tm_3, 'updates'), 'TM_3.png', 
+          'Transition Matrix (Three Rings)', 'outputs/probTraj')
 
 
+
+# Time-inhomogeneous Trajectories
+# Paremeters are subjected to change
+time_tm_0 = TM(time_inhomo(deterministic_trajectories, 4, 4, 6, 8).make_tm_time()).make_tm()
+plot_sparse(prepare_for_sparse_plot(time_tm_0, 'updates'), 'specific_TM_0.png', 
+            'Transition Matrix (Deterministic) (Thursday: 6am to 8am)', 'outputs/time_inhomo')
+time_inhomo_deterministic_trajectories = time_inhomo(deterministic_trajectories, 4, 4, 6, 8).make_tm_time()
+time_inhomo_deterministic_trajectories.toPandas().to_csv(os.path.join('outputs/time_inhomo', 'time_DetermTraj.csv'))
+time_tm_0.toPandas().to_csv(os.path.join('outputs/time_inhomo', 'time_tm_0.csv'))
+
+
+
+# Origin-Destination Matrices
 od = OD(probabilistic_trajectories).make_od()
-plot_dense(prepare_for_dense_plot(od, 'updates'), 'OD.png', 'Origin-Destination Matrix')
+plot_dense(prepare_for_dense_plot(od, 'updates'), 'OD.png',
+          'Origin-Destination Matrix', 'outputs/od')
 
-#Paremeters are subjected to change
-#tm_time = TM_OD(time_inhomo(cdr_trajectories, 6, 8).make_tm_time()).make_tm()
-#print("Transition Matrix: From 6am to 8am")
-#plot_dense(prepare_for_plot(tm_time, 'TM_updates'), 'TM (specific).png', 'Transition Matrix (6am to 8am)')
+
 
 
 
