@@ -5,10 +5,10 @@ User Defined Functions
 
 
 import os
-from posixpath import dirname
 import numpy as np
 import scipy.sparse as sparse
 import matplotlib.pyplot as plt
+
 
 
 
@@ -26,9 +26,9 @@ def prepare_for_sparse_plot(data, type_):
     rows = np.array( pd_df['y'].astype('int') )
     cols = np.array( pd_df['x'].astype('int') )
 
-    A = sparse.coo_matrix((data, (rows, cols)), shape = (114, 114))
+    M = sparse.coo_matrix((data, (rows, cols)), shape = (114+1, 114+1))
 
-    return A
+    return M
 
 def prepare_for_dense_plot(data, type_):
 
@@ -38,9 +38,9 @@ def prepare_for_dense_plot(data, type_):
     rows = np.array( pd_df['y'].astype('int') )
     cols = np.array( pd_df['x'].astype('int') )
 
-    A = sparse.coo_matrix((data, (rows, cols)))
+    M = sparse.coo_matrix((data, (rows, cols)))
 
-    return A
+    return M
 
 
 def plot_sparse(matrix, fname, title, dirname):
@@ -66,6 +66,9 @@ def plot_dense(matrix, fname, title, dirname):
     plt.ylabel("polygon", fontsize = 30)
     plt.title(title, fontsize = 35)
     plt.savefig(os.path.join(dirname, fname))
+
+
+
 
 
 

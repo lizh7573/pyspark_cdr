@@ -5,8 +5,7 @@ Processing Ring Datasets
 
 import pyspark.sql.functions as F
 from pyspark.sql import Window
-from pyspark.sql.functions import arrays_zip
-from pyspark.sql.types import DoubleType, IntegerType, FloatType, ArrayType, StringType
+from pyspark.sql.types import IntegerType, FloatType, ArrayType
 from cdr_trajectories.constants import spark, ring_fraction
 
 
@@ -173,7 +172,7 @@ class ring:
 
     def states(self):
         self.df = self.df\
-            .withColumn('states', arrays_zip('neighbors', 'props'))
+            .withColumn('states', F.arrays_zip('neighbors', 'props'))
         return self.df
 
     def get_1ring_data(self):
