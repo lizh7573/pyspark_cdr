@@ -9,12 +9,14 @@ import scipy.sparse as sparse
 from pyspark.sql import Window
 from numpy.linalg import matrix_power
 from cdr_trajectories.TM import TM
-from cdr_trajectories.udfs import prepare_for_sparse_plot
+from cdr_trajectories.udfs import prepare_for_plot
 from cdr_trajectories.trajectories import time_inhomo_deterministic_trajectories,\
 time_inhomo_probabilistic_trajectories
 
-M = prepare_for_sparse_plot(TM(time_inhomo_deterministic_trajectories).make_tm(), 'updates')\
+
+M = prepare_for_plot(TM(time_inhomo_probabilistic_trajectories).make_tm(), 'updates')\
                        .toarray().tolist()
+
 
 class Simulation:
 
@@ -52,23 +54,10 @@ def vectorize(x):
     matrix = matrix_power(M, i).tolist()
     update = np.dot(vector, matrix).tolist()
 
-    return (voronoi_id, user_id, timestamp, v_row, v_col, v_val, i, vector, matrix, update)   
+    return (user_id, timestamp, vector, update)   
 
-rdd2 = Simulation(time_inhomo_deterministic_trajectories).update()\
+rdd2 = Simulation(time_inhomo_probabilistic_trajectories).update()\
        .rdd.map(lambda x: vectorize(x))\
-       .toDF(['voronoi_id', 'user_id', 'timestamp', 'v_row', 'v_col', 'v_val', 'i', 'vector', 'matrix', 'update'])
+       .toDF(['user_id', 'timestamp', 'vector', 'update'])
 
-# print(type(rdd2))
-# rdd2.toPandas().to_csv('result.csv')
-# print(  np.shape(rdd2.toPandas()['update'][0])   )
-# print(  np.shape(rdd2.toPandas()['matrix'][0])   )
-# print(rdd2.toPandas()['update'][0])
-# print(rdd2.toPandas()['update'][10])
-print(np.sum(rdd2.toPandas()['update'][0]))
-print(np.sum(rdd2.toPandas()['update'][1]))
-print(np.sum(rdd2.toPandas()['update'][2]))
-print(np.sum(rdd2.toPandas()['update'][3]))
-print(np.sum(rdd2.toPandas()['update'][4]))
-print(np.sum(rdd2.toPandas()['update'][5]))
-print(np.sum(rdd2.toPandas()['update'][6]))
-print(np.sum(rdd2.toPandas()['update'][7]))
+rdd2.toPandas().to_csv('result.csv')
