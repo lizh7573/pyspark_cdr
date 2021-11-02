@@ -30,18 +30,6 @@ def prepare_for_plot(data, type_):
 
     return M
 
-# def prepare_for_dense_plot(data, type_):
-
-#     pd_df = data.toPandas()
-
-#     data = np.array( pd_df[type_] )
-#     rows = np.array( pd_df['y'].astype('int') )
-#     cols = np.array( pd_df['x'].astype('int') )
-
-#     M = sparse.coo_matrix((data, (rows, cols)))
-
-#     return M
-
 
 def plot_sparse(matrix, fname, title, dirname):
     plt.figure(figsize = (20, 20))
