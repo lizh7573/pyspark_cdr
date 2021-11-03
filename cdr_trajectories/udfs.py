@@ -6,6 +6,7 @@ User Defined Functions
 
 import os
 import numpy as np
+import pandas as pd
 import scipy.sparse as sparse
 import matplotlib.pyplot as plt
 
@@ -53,6 +54,25 @@ def plot_dense(matrix, fname, title, dirname):
     plt.xlabel("polygon", fontsize = 30)
     plt.ylabel("polygon", fontsize = 30)
     plt.title(title, fontsize = 35)
+    plt.savefig(os.path.join(dirname, fname))
+
+
+
+def plot_vector(vector, fname, title, dirname):
+
+    vector = vector.toPandas()
+    init_vector = vector['vector'][0]
+    vectorization = np.array([init_vector])
+
+    for x in range(1, len(vector.index)):
+        next_vectorization = np.array([vector['vector'][x]])
+        vectorization = np.append(vectorization, next_vectorization, axis = 0)
+        dfStationaryDist = pd.DataFrame(vectorization)
+        dfStationaryDist.plot(legend = None)
+    
+    plt.xlabel("iterated times", fontsize = 15)
+    plt.ylabel("probability", fontsize = 15)
+    plt.title(title, fontsize = 18)
     plt.savefig(os.path.join(dirname, fname))
 
 

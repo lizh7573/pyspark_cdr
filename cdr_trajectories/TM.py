@@ -7,6 +7,8 @@ import pyspark.sql.functions as F
 from pyspark.sql import Window
 from pyspark.sql.types import ArrayType, FloatType
 from cdr_trajectories.udfs import matrix_updates
+from cdr_trajectories.udfs import prepare_for_plot
+from cdr_trajectories.trajectories import time_inhomo_probabilistic_trajectories
 
 class TM:
 
@@ -46,6 +48,7 @@ class TM:
         return self.df
 
     
+# Matrix = prepare_for_plot(TM(time_inhomo_probabilistic_trajectories).make_tm(), 'updates').toarray().tolist()
 
     
 
