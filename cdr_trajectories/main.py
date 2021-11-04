@@ -10,7 +10,7 @@ import scipy.sparse as sparse
 from numpy.linalg import matrix_power
 from cdr_trajectories.TM import TM
 from cdr_trajectories.OD import OD
-from cdr_trajectories.udfs import prepare_for_plot, plot_sparse, plot_dense, plot_vector
+from cdr_trajectories.udfs import prepare_for_plot, plot_sparse, plot_dense, plot_vector, plot_vector_bar
 from cdr_trajectories.simulation import Vectorization, Stationary
 from cdr_trajectories.trajectories import deterministic_trajectories, oneRing_trajectories,\
 twoRing_trajectories, probabilistic_trajectories, time_inhomo_deterministic_trajectories,\
@@ -18,7 +18,7 @@ time_inhomo_probabilistic_trajectories
 
 
 
-# Deterministic Trajectories
+## DETERMINISTIC TRAJECTORIES
 
 tm_0 = TM(deterministic_trajectories).make_tm()
 plot_sparse(prepare_for_plot(tm_0, 'updates'), 'TM_0.png', 
@@ -28,7 +28,7 @@ plot_sparse(prepare_for_plot(tm_0, 'updates'), 'TM_0.png',
 
 
 
-#Probabilistic Trajectories
+## PROBABILISTIC TRAJECTORIES
 
 tm_1 = TM(oneRing_trajectories).make_tm()
 plot_dense(prepare_for_plot(tm_1, 'updates'), 'TM_1.png',
@@ -44,7 +44,7 @@ plot_dense(prepare_for_plot(tm_3, 'updates'), 'TM_3.png',
 
 
 
-# Time-inhomogeneous Trajectories
+## TIME-INHOMOGENEOUS TRAJECTORIES
 # Paremeters are subjected to change
 
 # Deterministic
@@ -64,14 +64,14 @@ time_tm_3.toPandas().to_csv(os.path.join('outputs/time_inhomo', 'time_tm_3.csv')
 
 
 
-# Origin-Destination Matrices
+## ORIGIN-DESTINATION MATRICES
 od = OD(probabilistic_trajectories).make_od()
 plot_dense(prepare_for_plot(od, 'updates'), 'OD.png',
           'Origin-Destination Matrix', 'outputs/od')
 
 
 
-# Simulation 
+## SIMULATION 
 
 # Stationary Distribution
 Matrix = prepare_for_plot(TM(time_inhomo_probabilistic_trajectories).make_tm(), 'updates').toarray().tolist()
@@ -99,8 +99,8 @@ vector_data = Vectorization(time_inhomo_probabilistic_trajectories).set_helpCols
 stationaryVector = Stationary(vector_data).process()
 
 stationaryVector.toPandas().to_csv(os.path.join('outputs/simulation', 'time_sd_3.csv'))
-plot_vector(stationaryVector, 'SD.png', 'Stationary Distribution', 'outputs/simulation')
-
+plot_vector(stationaryVector, 'SD_dev.png', 'Stationary Distribution', 'outputs/simulation')
+plot_vector_bar(stationaryVector, 'SD.png', 'Stationary Distribution', 'outputs/simulation')
 
 
 

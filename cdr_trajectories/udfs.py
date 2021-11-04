@@ -77,6 +77,23 @@ def plot_vector(vector, fname, title, dirname):
 
 
 
+def plot_vector_bar(vector, fname, title, dirname):
+
+    vector = vector.toPandas()
+    last_vector = vector['vector'][len(vector.index)-1]
+    vectorization = np.array([last_vector])
+    dfStationaryDist = pd.DataFrame(vectorization)
+    dfStationaryDist.plot(legend = None)
+
+    plt.bar(x = list(dfStationaryDist.columns), height = list(dfStationaryDist.iloc[0]))
+    plt.xlabel("state", fontsize = 15)
+    plt.ylabel("stationary probability", fontsize = 15)
+    plt.xticks(range(0, 114+1, 10))
+    plt.title(title, fontsize = 18)
+    plt.savefig(os.path.join(dirname, fname))
+
+
+
 
 
 

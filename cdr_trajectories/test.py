@@ -3,7 +3,10 @@ Simulation
 ==========
 """
 
+"""
 import os
+
+from PIL.Image import ROTATE_90
 import numpy as np
 import pandas as pd
 import pyspark.sql.functions as F
@@ -11,10 +14,13 @@ import scipy.sparse as sparse
 import matplotlib.pyplot as plt
 from pyspark.sql import Window
 from numpy.linalg import matrix_power
-from cdr_trajectories.TM import Matrix
+from cdr_trajectories.TM import TM
 from cdr_trajectories.udfs import prepare_for_plot
 from cdr_trajectories.trajectories import time_inhomo_probabilistic_trajectories
 from cdr_trajectories.udfs import plot_vector
+from cdr_trajectories.constants import spark
+
+Matrix = prepare_for_plot(TM(time_inhomo_probabilistic_trajectories).make_tm(), 'updates').toarray().tolist()
 
 class Vectorization:
 
@@ -67,28 +73,36 @@ class Stationary:
 
 stationaryVector = Stationary(vector_data).process()
 
-stationaryVector.toPandas().to_csv(os.path.join('outputs/simulation', 'time_sd_3.csv'))
-plot_vector(stationaryVector, 'SD.png', 'Stationary Distribution', 'outputs/simulation')
+stationaryVector = stationaryVector.toPandas()
+# print(len(stationaryVector.index))
+test = stationaryVector['vector'][len(stationaryVector.index)-1]
+# stationaryVector = spark.createDataFrame()
+test1 = np.array([test])
+test2 = pd.DataFrame(test1)
+# print(list(test2.iloc[0]))
+# test2.to_csv('test2.csv')
+test2.plot(legend = None)
 
+plt.bar(x = list(test2.columns), height = list(test2.iloc[0]))
+plt.xticks(range(0, 114+1, 10))
+plt.savefig('test.png')
+# plot_vector(stationaryVector, 'SD.png', 'Stationary Distribution', 'outputs/simulation')
 
-
-
-def plot_vector(vector, fname, title, dirname):
+def plot_vector_bar(vector, fname, title, dirname):
 
     vector = vector.toPandas()
-    init_vector = vector['vector'][0]
-    vectorization = np.array([init_vector])
+    last_vector = vector['vector'][len(vector.index)-1]
+    vectorization = np.array([last_vector])
+    dfStationaryDist = pd.DataFrame(vectorization)
+    dfStationaryDist.plot(legend = None)
 
-    for x in range(1, len(vector.index)):
-        next_vectorization = np.array([vector['vector'][x]])
-        vectorization = np.append(vectorization, next_vectorization, axis = 0)
-        dfStationaryDist = pd.DataFrame(vectorization)
-        dfStationaryDist.plot(legend = None)
-    
-    plt.xlabel("iterated times", fontsize = 15)
-    plt.ylabel("probability", fontsize = 15)
+    plt.bar(x = list(dfStationaryDist.columns), height = list(dfStationaryDist.iloc[0]))
+    plt.xlabel("state", fontsize = 15)
+    plt.ylabel("stationary probability", fontsize = 15)
+    plt.xticks(range(0, 114+1, 10))
     plt.title(title, fontsize = 18)
     plt.savefig(os.path.join(dirname, fname))
+
 
 
 # stationaryVector = stationaryVector.toPandas()  
@@ -107,3 +121,4 @@ def plot_vector(vector, fname, title, dirname):
 # plt.savefig(os.path.join('outputs/', 'test.png'))
 
 
+"""
