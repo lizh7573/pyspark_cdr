@@ -67,4 +67,4 @@ probabilistic_trajectories = threeRing_trajectories
 # Time-inhomogeneous Trajectories
 # Paremeters are subjected to change
 time_inhomo_deterministic_trajectories = time_inhomo(deterministic_trajectories, 4, 4, 6, 8).make_tm_time()
-time_inhomo_probabilistic_trajectories = time_inhomo(probabilistic_trajectories, 4, 4, 17, 19).make_tm_time()
+time_inhomo_probabilistic_trajectories = time_inhomo(probabilistic_trajectories, 4, 4, 12, 18).make_tm_time()

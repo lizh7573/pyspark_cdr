@@ -38,9 +38,9 @@ def plot_sparse(matrix, fname, title, dirname):
     plt.grid()
     plt.xticks(fontsize = 20)
     plt.yticks(fontsize = 20)
-    plt.xlabel("polygon", fontsize = 30)
-    plt.ylabel("polygon", fontsize = 30)
-    plt.title(title, fontsize = 35)
+    plt.xlabel("polygon", fontsize = 27)
+    plt.ylabel("polygon", fontsize = 27)
+    plt.title(title, fontsize = 30)
     plt.savefig(os.path.join(dirname, fname))
 
 
@@ -51,9 +51,9 @@ def plot_dense(matrix, fname, title, dirname):
     plt.grid()
     plt.xticks(fontsize = 20)
     plt.yticks(fontsize = 20)
-    plt.xlabel("polygon", fontsize = 30)
-    plt.ylabel("polygon", fontsize = 30)
-    plt.title(title, fontsize = 35)
+    plt.xlabel("polygon", fontsize = 27)
+    plt.ylabel("polygon", fontsize = 27)
+    plt.title(title, fontsize = 30)
     plt.savefig(os.path.join(dirname, fname))
 
 

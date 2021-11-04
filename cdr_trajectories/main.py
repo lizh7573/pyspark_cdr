@@ -50,16 +50,16 @@ plot_dense(prepare_for_plot(tm_3, 'updates'), 'TM_3.png',
 # Deterministic
 time_tm_0 = TM(time_inhomo_deterministic_trajectories).make_tm()
 plot_sparse(prepare_for_plot(time_tm_0, 'updates'), 'specific_TM_0.png', 
-            'Transition Matrix (Deterministic) (Thursday: 6am to 8am)', 'outputs/time_inhomo')
+            'Time Inhomogeneous Transition Matrix (Deterministic)', 'outputs/time_inhomo')
 # time_inhomo_deterministic_trajectories.toPandas().to_csv(os.path.join('outputs/time_inhomo', 'time_DetermTraj.csv'))
 # time_tm_0.toPandas().to_csv(os.path.join('outputs/time_inhomo', 'time_tm_0.csv'))
 
 # Probabilistic
 time_tm_3 = TM(time_inhomo_probabilistic_trajectories).make_tm()
 plot_dense(prepare_for_plot(time_tm_3, 'updates'), 'specific_TM_3.png', 
-            'Transition Matrix (Probabilistic) (Thursday: 17pm to 19pm)', 'outputs/time_inhomo')
-# time_inhomo_probabilistic_trajectories.toPandas().to_csv(os.path.join('outputs/time_inhomo', 'time_ProbTraj.csv'))
-# time_tm_3.toPandas().to_csv(os.path.join('outputs/time_inhomo', 'time_tm_3.csv'))
+            'Time Inhomogeneous Transition Matrix (Probabilistic)', 'outputs/time_inhomo')
+time_inhomo_probabilistic_trajectories.toPandas().to_csv(os.path.join('outputs/time_inhomo', 'time_ProbTraj.csv'))
+time_tm_3.toPandas().to_csv(os.path.join('outputs/time_inhomo', 'time_tm_3.csv'))
 
 
 
@@ -71,7 +71,9 @@ plot_dense(prepare_for_plot(od, 'updates'), 'OD.png',
 
 
 
-###########
+# Simulation 
+
+# Stationary Distribution
 Matrix = prepare_for_plot(TM(time_inhomo_probabilistic_trajectories).make_tm(), 'updates').toarray().tolist()
 
 def vectorize(x):
