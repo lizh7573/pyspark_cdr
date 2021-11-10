@@ -1,5 +1,5 @@
 """
-Constants for this package
+Constants for This Package
 ==========================
 """
 
