@@ -92,6 +92,7 @@ class Simulation:
              .agg(F.array(*[F.avg(F.col('sim_vector')[m]) for m in range(114+1)]).alias('sim_vector')).orderBy('i')\
              .withColumn('avg_sim_vector', F.array(*[F.avg(F.col('sim_vector')[n]).over(w) for n in range(114+1)]))\
              .drop('sim_vector').withColumnRenamed('avg_sim_vector', 'vector')
+        return self.df
 
     def process(self):
         self.make_traj()
