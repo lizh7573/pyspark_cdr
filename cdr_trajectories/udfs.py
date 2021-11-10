@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import scipy.sparse as sparse
 import matplotlib.pyplot as plt
+from random import seed, random
 
 
 
@@ -87,10 +88,53 @@ def plot_vector_bar(vector, fname, title, dirname):
 
     plt.bar(x = list(dfStationaryDist.columns), height = list(dfStationaryDist.iloc[0]))
     plt.xlabel("state", fontsize = 15)
-    plt.ylabel("stationary probability", fontsize = 15)
+    plt.ylabel("probability", fontsize = 15)
     plt.xticks(range(0, 114+1, 10))
     plt.title(title, fontsize = 18)
     plt.savefig(os.path.join(dirname, fname))
+
+
+def randomize(current_row):
+    seed(4)
+    r = np.random.uniform(0.0, 1.0)
+    CS = np.cumsum(current_row)
+    m = (np.where(CS < r))[0]
+    nextState = m[len(m)-1]+1
+    return nextState
+
+
+
+def simulate(data):
+
+    df = data.toPandas()
+    P = np.array( df['matrix'][0] )
+
+    for i in df.index:
+        currentState = df['voronoi_id'][i]
+        simulated_traj = [currentState.item()]
+
+        for x in range(1000):
+            currentRow = np.ma.masked_values((P[currentState]), 0.0)
+            nextState = randomize(currentRow)
+            simulated_traj = simulated_traj + [nextState.item()]
+            currentState = nextState
+        
+        df.at[i, 'simulated_traj'] = str(simulated_traj)
+
+    return df
+
+
+def sim_vectorize(x):
+
+    user_id = x.user_id
+    simulated_traj = x.simulated_traj
+    v_row = x.v_row
+    v_col = x.v_col
+    v_val = x.v_val
+    i = x.i
+    sim_vector = (sparse.coo_matrix((v_val, (v_row, v_col)), shape=(1,114+1)).toarray().tolist())[0]
+
+    return (user_id, simulated_traj, sim_vector, i)
 
 
 

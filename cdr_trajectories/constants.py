@@ -7,7 +7,7 @@ from pyspark.sql import SparkSession
 
 spark = SparkSession.builder\
     .enableHiveSupport()\
-    .appName('MobilityAnalysis_NoisyData')\
+    .appName('cdr_trajectories')\
     .master("local[*]")\
     .getOrCreate()
 
