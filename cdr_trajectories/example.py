@@ -23,7 +23,7 @@ from cdr_trajectories.udfs import prepare_for_plot, plot_sparse, plot_dense, plo
 
 
 
-mpn_file = 'data/mpn/mpn2.bz2'
+mpn_file = 'data/mpn/*'
 voronoi_file = 'data/voronoi/*'
 
 firstRing_file = 'data/ring/voronoi20191213uppsla1st.txt'
