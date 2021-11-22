@@ -8,7 +8,6 @@ from pyspark.sql import SparkSession
 spark = SparkSession.builder\
     .enableHiveSupport()\
     .appName('cdr_trajectories')\
-    .master("local[*]")\
     .getOrCreate()
 
 

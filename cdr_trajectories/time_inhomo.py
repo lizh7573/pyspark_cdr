@@ -18,7 +18,7 @@ class time_inhomo:
     def filter(self):
         self.df = self.df\
             .filter((F.col('weekday') >= self.day_begin) & (F.col('weekday') <= self.day_end))\
-            .filter((F.col('hour') >= self.hour_begin) & (F.col('hour') <= self.hour_end))
+            .filter((F.col('hour') >= self.hour_begin) & (F.col('hour') < self.hour_end))
         return self.df
 
     def make_tm_time(self):
