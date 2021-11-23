@@ -4,9 +4,6 @@ Trajectories
 """
 
 import pyspark.sql.functions as F
-from cdr_trajectories.mpn import MPN
-from cdr_trajectories.voronoi import Voronoi
-from cdr_trajectories.ring import get_RingData
 
 
 # Deterministic Trajectories
@@ -17,7 +14,7 @@ class DetermTraj:
         self.voronoi = voronoi
 
     def join(self):
-        self.df = self.mpn.join(self.voronoi, ['avg_X', 'avg_Y'], how = 'inner')\
+        self.df = self.mpn.join(F.broadcast(self.voronoi), ['avg_X', 'avg_Y'], how = 'inner')\
                        .orderBy(['user_id', 'timestamp'])
         return self.df
             
@@ -46,7 +43,7 @@ class ProbTraj:
         self.ring = ring
 
     def make_traj(self):
-        self.df = self.df.join(self.ring, ['voronoi_id'], how = 'inner')\
+        self.df = self.df.join(F.broadcast(self.ring), ['voronoi_id'], how = 'inner')\
                          .orderBy(['user_id', 'timestamp'])\
                          .drop('avg_X', 'avg_Y', 'neighbors', 'props')
         return self.df
@@ -55,24 +52,24 @@ class ProbTraj:
 
 
 
-def get_DetermTrajData(mpn_file, voronoi_file):
+# def get_DetermTrajData(mpn_file, voronoi_file):
 
-    mpn_data = MPN(mpn_file).process()
-    voronoi_data = Voronoi(voronoi_file).process()
+#     mpn_data = MPN(mpn_file).process()
+#     voronoi_data = Voronoi(voronoi_file).process()
     
-    deterministic_trajectories = DetermTraj(mpn_data, voronoi_data).make_traj()
+#     deterministic_trajectories = DetermTraj(mpn_data, voronoi_data).make_traj()
 
-    return deterministic_trajectories
+#     return deterministic_trajectories
 
 
-def get_ProbTrajData(mpn_file, voronoi_file, firstRing_file, secondRing_file, thirdRing_file):
+# def get_ProbTrajData(mpn_file, voronoi_file, firstRing_file, secondRing_file, thirdRing_file):
 
-    mpn_data = MPN(mpn_file).process()
-    voronoi_data = Voronoi(voronoi_file).process()
+#     mpn_data = MPN(mpn_file).process()
+#     voronoi_data = Voronoi(voronoi_file).process()
 
-    trajectories = DetermTraj(mpn_data, voronoi_data).join()
-    threeRing_data = get_RingData(firstRing_file, secondRing_file, thirdRing_file)
+#     trajectories = DetermTraj(mpn_data, voronoi_data).join()
+#     threeRing_data = get_RingData(firstRing_file, secondRing_file, thirdRing_file)
 
-    probabilistic_trajectories = ProbTraj(trajectories, threeRing_data).make_traj()
+#     probabilistic_trajectories = ProbTraj(trajectories, threeRing_data).make_traj()
 
-    return probabilistic_trajectories
+#     return probabilistic_trajectories

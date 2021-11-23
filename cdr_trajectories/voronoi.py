@@ -5,7 +5,7 @@ Processing Voronoi Dataset
 
 import pyspark.sql.functions as F
 from pyspark.sql.types import DoubleType
-from cdr_trajectories.constants import spark
+from cdr_trajectories.constants import Spark
 
 
 
@@ -13,7 +13,7 @@ class Voronoi:
 
     def __init__(self, path):
         self.path = path
-        self.df = spark.read.format("csv")\
+        self.df = Spark.read.format("csv")\
             .option("inferSchema", "true")\
             .option("header", "true")\
             .option("sep", ";")\

@@ -5,7 +5,7 @@ Constants for This Package
 
 from pyspark.sql import SparkSession
 
-spark = SparkSession.builder\
+Spark = SparkSession.builder\
     .enableHiveSupport()\
     .appName('cdr_trajectories')\
     .getOrCreate()

@@ -7,16 +7,20 @@ import os
 import numpy as np
 import pandas as pd
 from random import seed, random
+
 from pyspark.sql import Window
 import pyspark.sql.functions as F
 from pyspark.ml.linalg import Vectors
-from cdr_trajectories.constants import spark
 from pyspark.sql.types import IntegerType
-from cdr_trajectories.TM import TM
-from cdr_trajectories.OD import OD
-from cdr_trajectories.ring import get_RingData
-from cdr_trajectories.trajectories import get_DetermTrajData, get_ProbTrajData
+
+from cdr_trajectories.constants import Spark
+from cdr_trajectories.mpn import MPN
+from cdr_trajectories.voronoi import Voronoi
+from cdr_trajectories.ring import get_oneRingData, get_twoRingData, get_threeRingData
+from cdr_trajectories.trajectories import DetermTraj, ProbTraj
 from cdr_trajectories.time_inhomo import time_inhomo
+from cdr_trajectories.OD import OD
+from cdr_trajectories.TM import TM
 from cdr_trajectories.simulation import Vectorization, Simulation
 from cdr_trajectories.udfs import prepare_for_plot, plot_sparse, plot_dense, plot_vector, plot_vector_bar
 
@@ -32,12 +36,24 @@ thirdRing_file = 'data/ring/voronoi20191213uppsla3d.txt'
 
 
 
-### 0 -TRAJECTORIES
-## 0.1 - Deterministic Trajectories:
-deterministic_trajectories = get_DetermTrajData(mpn_file, voronoi_file)
-## 0.2 - Probabilistic Trajectories:
-probabilistic_trajectories = get_ProbTrajData(mpn_file, voronoi_file, firstRing_file, secondRing_file, thirdRing_file)
+### 0 - PROCESSED DATASET:
+## 0.1 - Mobile Phone Network:
+mpn_data = MPN(mpn_file).process()
+## 0.2 - Vornnoi Polygon:
+voronoi_data = Voronoi(voronoi_file).process()
+## 0.3 - Ring Distribution:
+oneRing_data = get_oneRingData(firstRing_file, secondRing_file, thirdRing_file)
+twoRing_data = get_twoRingData(firstRing_file, secondRing_file, thirdRing_file)
+threeRing_data = get_threeRingData(firstRing_file, secondRing_file, thirdRing_file)
+## 0.4 - Deterministic Trajectories:
+deterministic_trajectories = DetermTraj(mpn_data, voronoi_data).make_traj()
+## 0.5 - Probabilistic Trajectories:
+trajectories = DetermTraj(mpn_data, voronoi_data).join()
+trajectories_oneRing = ProbTraj(trajectories, oneRing_data).make_traj()
+trajectories_twoRing = ProbTraj(trajectories, twoRing_data).make_traj()
+probabilistic_trajectories = ProbTraj(trajectories, threeRing_data).make_traj()
 time_inhomogeneous_probabilistic_trajectories = time_inhomo(probabilistic_trajectories, 1, 5, 12, 18).make_tm_time()
+
 
 
 
@@ -60,14 +76,15 @@ plot_sparse(prepare_for_plot(tm_0, 'updates'), 'TM_0.png', 'Transition Matrix (D
 
 
 ## 2.2 - Probabilistic Trajectories:
-# tm_1 = TM( get_ProbTrajData(mpn_file, voronoi_file, firstRing_file) ).make_tm()
-# plot_dense(prepare_for_plot(tm_1, 'updates'), 'TM_1.png', 'Transition Matrix (One Ring)', 'outputs/probTraj')
+tm_1 = TM(trajectories_oneRing).make_tm()
+plot_sparse(prepare_for_plot(tm_1, 'updates'), 'TM_1.png', 'Transition Matrix (One Ring)', 'outputs/probTraj')
 
-# tm_2 = TM( get_ProbTrajData(mpn_file, voronoi_file, secondRing_file) ).make_tm()
-# plot_dense(prepare_for_plot(tm_2, 'updates'), 'TM_2.png', 'Transition Matrix (Two Rings)', 'outputs/probTraj')
+tm_2 = TM(trajectories_twoRing).make_tm()
+plot_sparse(prepare_for_plot(tm_2, 'updates'), 'TM_2.png', 'Transition Matrix (Two Rings)', 'outputs/probTraj')
 
 tm_3 = TM(probabilistic_trajectories).make_tm()
-plot_dense(prepare_for_plot(tm_3, 'updates'), 'TM_3.png', 'Transition Matrix (Three Rings)', 'outputs/probTraj')
+plot_sparse(prepare_for_plot(tm_3, 'updates'), 'TM_3.png', 'Transition Matrix (Three Rings)', 'outputs/probTraj')
+plot_dense(prepare_for_plot(tm_3, 'updates'), 'TM_3_Dense.png', 'Transition Matrix (Probabilistic)', 'outputs/probTraj')
 
 
 
@@ -164,7 +181,7 @@ def simulate(data):
 
     return df
 
-init_sim = spark.createDataFrame(simulate(init_state))
+init_sim = Spark.createDataFrame(simulate(init_state))
 
 w2 = Window.partitionBy(['user_id']).orderBy(F.lit('A'))
 init_sim = init_sim.withColumn('simulated_traj', F.explode(F.split(F.col('simulated_traj'), ',')))\
@@ -175,7 +192,6 @@ init_sim = init_sim.withColumn('simulated_traj', F.explode(F.split(F.col('simula
          .select('user_id', 'simulated_traj', 'i')
 
 
-threeRing_data = get_RingData(firstRing_file, secondRing_file, thirdRing_file)
 sim_traj = init_sim.join(F.broadcast(threeRing_data), init_sim.simulated_traj == threeRing_data.voronoi_id, how = 'inner')\
               .orderBy(['user_id', 'i']).select('user_id', 'simulated_traj', 'states', 'i')
 
