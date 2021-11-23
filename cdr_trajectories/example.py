@@ -8,8 +8,8 @@ import numpy as np
 import pandas as pd
 from random import seed, random
 
-from pyspark.sql import Window
 import pyspark.sql.functions as F
+from pyspark.sql import Window
 from pyspark.ml.linalg import Vectors
 from pyspark.sql.types import IntegerType
 
@@ -18,7 +18,7 @@ from cdr_trajectories.mpn import MPN
 from cdr_trajectories.voronoi import Voronoi
 from cdr_trajectories.ring import get_oneRingData, get_twoRingData, get_threeRingData
 from cdr_trajectories.trajectories import DetermTraj, ProbTraj
-from cdr_trajectories.time_inhomo import time_inhomo
+from cdr_trajectories.time_inhomo import Time_inhomo
 from cdr_trajectories.OD import OD
 from cdr_trajectories.TM import TM
 from cdr_trajectories.simulation import Vectorization, Simulation
@@ -52,7 +52,7 @@ trajectories = DetermTraj(mpn_data, voronoi_data).join()
 trajectories_oneRing = ProbTraj(trajectories, oneRing_data).make_traj()
 trajectories_twoRing = ProbTraj(trajectories, twoRing_data).make_traj()
 probabilistic_trajectories = ProbTraj(trajectories, threeRing_data).make_traj()
-time_inhomogeneous_probabilistic_trajectories = time_inhomo(probabilistic_trajectories, 1, 5, 12, 18).make_tm_time()
+time_inhomogeneous_probabilistic_trajectories = Time_inhomo(probabilistic_trajectories, 1, 5, 12, 18).make_ti_traj()
 
 
 
