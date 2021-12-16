@@ -18,6 +18,11 @@ class TM:
         self.df = self.df.withColumn('states_lag', F.lag('states').over(window)).dropna()
         return self.df
 
+    def sim_tm_states_vector(self):
+        window = Window.partitionBy(F.col('user_id')).orderBy('i')
+        self.df = self.df.withColumn('states_lag', F.lag('states').over(window)).dropna()
+        return self.df
+
     def tm_states_update(self):
         updates_udf = F.udf(matrix_updates, ArrayType(ArrayType(FloatType())))
         self.df = self.df.withColumn('updates', updates_udf('states_lag', 'states'))
@@ -40,6 +45,13 @@ class TM:
 
     def make_tm(self):
         self.tm_states_vector()
+        self.tm_states_update()
+        self.states_collect()
+        self.states_normalize()
+        return self.df
+
+    def make_sim_tm(self):
+        self.sim_tm_states_vector()
         self.tm_states_update()
         self.states_collect()
         self.states_normalize()

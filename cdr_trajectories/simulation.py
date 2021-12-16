@@ -15,36 +15,29 @@ class Vectorization:
     def __init__(self, df):
         self.df = df
 
-
     def set_help_cols(self):
         window = Window.partitionBy(['user_id']).orderBy('timestamp')
-        last_hour = self.df.agg(F.max('hour')).collect()[0][0]
-        first_hour = self.df.agg(F.min('hour')).collect()[0][0]
-        self.df = self.df.withColumn('n', (F.lit(last_hour)-F.lit(first_hour)+1)*12)\
-                         .withColumn('i', F.row_number().over(window)).filter(F.col('i') == 1)\
+        self.df = self.df.withColumn('i', F.row_number().over(window)).filter(F.col('i') == 1)\
                          .withColumn('states', F.explode('states'))\
-                         .select('voronoi_id', 'user_id', 'n',
-                                 F.col('states.neighbors').alias('v_col'), F.col('states.props').alias('v_val'))
+                         .select('voronoi_id', 'user_id', F.col('states.neighbors').alias('v_col'), 
+                                                          F.col('states.props').alias('v_val'))
         return self.df
-
 
     def weighted_average(self):
         count = self.df.agg(F.countDistinct('user_id')).collect()[0][0]
         self.df = self.df\
-            .select('n', 'v_col', 'v_val')\
-            .groupBy('n', 'v_col')\
+            .select('v_col', 'v_val')\
+            .groupBy('v_col')\
             .agg(F.sum('v_val').alias('v_val'))\
             .withColumn('v_val', F.col('v_val')/F.lit(count))\
             .orderBy('v_col')
         return self.df
 
     def collect(self):
-        self.df = self.df.groupBy('n')\
-                      .agg(F.collect_list('v_col').alias('col'),
-                           F.collect_list('v_val').alias('val'))
+        self.df = self.df.agg(F.collect_list('v_col').alias('col'),
+                              F.collect_list('v_val').alias('val'))
         return self.df
-
-    
+  
     def process(self):
         self.set_help_cols()
         self.weighted_average()
@@ -56,8 +49,15 @@ class Vectorization:
 
 class Simulation:
 
-    def __init__(self, df):
-        self.df = df
+    def __init__(self, traj, noise):
+        self.traj = traj
+        self.noise = noise
+        self.df = self.traj.join(F.broadcast(noise), self.traj.simulated_traj == self.noise.voronoi_id, how = 'inner')\
+                           .orderBy(['user_id', 'i']).select('user_id', 'simulated_traj', 'states', 'i')
+
+    def reformulate_TM(self):
+        self.df = self.df.select('user_id', 'states', 'i')
+        return self.df
 
     def set_help_cols(self):
         self.df = self.df\

@@ -5,14 +5,15 @@ Processing MPN Dataset
 
 import pyspark.sql.functions as F
 from pyspark.sql.types import DoubleType
-from cdr_trajectories.constants import Spark
+# from cdr_trajectories.constants import Spark
 
 
 class MPN:
 
-    def __init__(self, path):
+    def __init__(self, spark, path):
+        self.spark = spark
         self.path = path
-        self.df = Spark.read.format("csv")\
+        self.df = self.spark.read.format("csv")\
             .option("inferSchema", "true")\
             .option("header", "true")\
             .option("sep", ";")\

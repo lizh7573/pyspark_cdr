@@ -9,11 +9,11 @@ import pandas as pd
 from random import seed, random
 
 import pyspark.sql.functions as F
+from pyspark.sql import SparkSession
 from pyspark.sql import Window
 from pyspark.ml.linalg import Vectors
 from pyspark.sql.types import IntegerType
 
-from cdr_trajectories.constants import Spark
 from cdr_trajectories.mpn import MPN
 from cdr_trajectories.voronoi import Voronoi
 from cdr_trajectories.ring import get_oneRingData, get_twoRingData, get_threeRingData
@@ -22,9 +22,15 @@ from cdr_trajectories.time_inhomo import Time_inhomo
 from cdr_trajectories.OD import OD
 from cdr_trajectories.TM import TM
 from cdr_trajectories.simulation import Vectorization, Simulation
-from cdr_trajectories.udfs import prepare_for_plot, plot_sparse, plot_dense, plot_vector, plot_vector_bar
+from cdr_trajectories.udfs import prepare_for_plot, plot_sparse, plot_dense, vectorize, stationary,\
+                                  vectorConverge, plot_trend, plot_result, simulate, plot_sim_result
 
 
+spark = SparkSession.builder\
+    .enableHiveSupport()\
+    .appName('cdr_trajectories')\
+    .master('local[*]')\
+    .getOrCreate()
 
 
 mpn_file = 'data/mpn/*'
@@ -37,31 +43,37 @@ thirdRing_file = 'data/ring/voronoi20191213uppsla3d.txt'
 
 
 ### 0 - PROCESSED DATASET:
+
+
 ## 0.1 - Mobile Phone Network:
-mpn_data = MPN(mpn_file).process()
+mpn_data = MPN(spark, mpn_file).process()
+
 ## 0.2 - Vornnoi Polygon:
-voronoi_data = Voronoi(voronoi_file).process()
+voronoi_data = Voronoi(spark, voronoi_file).process()
+
 ## 0.3 - Ring Distribution:
-oneRing_data = get_oneRingData(firstRing_file, secondRing_file, thirdRing_file)
-twoRing_data = get_twoRingData(firstRing_file, secondRing_file, thirdRing_file)
-threeRing_data = get_threeRingData(firstRing_file, secondRing_file, thirdRing_file)
+oneRing_data = get_oneRingData(spark, firstRing_file, secondRing_file, thirdRing_file)
+twoRing_data = get_twoRingData(spark, firstRing_file, secondRing_file, thirdRing_file)
+threeRing_data = get_threeRingData(spark, firstRing_file, secondRing_file, thirdRing_file)
+
 ## 0.4 - Deterministic Trajectories:
 deterministic_trajectories = DetermTraj(mpn_data, voronoi_data).make_traj()
+
 ## 0.5 - Probabilistic Trajectories:
 trajectories = DetermTraj(mpn_data, voronoi_data).join()
+
 trajectories_oneRing = ProbTraj(trajectories, oneRing_data).make_traj()
 trajectories_twoRing = ProbTraj(trajectories, twoRing_data).make_traj()
-probabilistic_trajectories = ProbTraj(trajectories, threeRing_data).make_traj()
-time_inhomogeneous_probabilistic_trajectories = Time_inhomo(probabilistic_trajectories, 1, 5, 12, 18).make_ti_traj()
+trajectories_threeRing = ProbTraj(trajectories, threeRing_data).make_traj()
 
+probabilistic_trajectories = trajectories_oneRing
 
 
 
 ### 1 - ORIGIN-DESTINATION MATRICES:
 
-od = OD(probabilistic_trajectories).make_od()
-plot_dense(prepare_for_plot(od, 'updates'), 'OD.png', 'Origin-Destination Matrix', 'outputs/od')
-
+# od = OD(probabilistic_trajectories).make_od()
+# plot_dense(prepare_for_plot(od, 'updates'), 'OD.png', 'Origin-Destination Matrix', 'outputs/od')
 
 
 
@@ -69,138 +81,109 @@ plot_dense(prepare_for_plot(od, 'updates'), 'OD.png', 'Origin-Destination Matrix
 ### 2 - TRANSITION MATRICES:
 
 ## 2.1 - Deterministic Trajectories:
-tm_0 = TM(deterministic_trajectories).make_tm()
-plot_sparse(prepare_for_plot(tm_0, 'updates'), 'TM_0.png', 'Transition Matrix (Deterministic)', 'outputs/determTraj')
-
-
+# tm_0 = TM(deterministic_trajectories).make_tm()
+# plot_sparse(prepare_for_plot(tm_0, 'updates'), 'TM_0.png', 'Transition Matrix (Deterministic)', 'outputs/determTraj')
 
 
 ## 2.2 - Probabilistic Trajectories:
-tm_1 = TM(trajectories_oneRing).make_tm()
-plot_sparse(prepare_for_plot(tm_1, 'updates'), 'TM_1.png', 'Transition Matrix (One Ring)', 'outputs/probTraj')
+# tm_1 = TM(probabilistic_trajectories).make_tm()
+# plot_sparse(prepare_for_plot(tm_1, 'updates'), 'TM_1.png', 'Transition Matrix (One Ring)', 'outputs/probTraj')
+# plot_dense(prepare_for_plot(tm_1, 'updates'), 'TM_1_Dense.png', 'Transition Matrix (Probabilistic)', 'outputs/probTraj')
 
-tm_2 = TM(trajectories_twoRing).make_tm()
-plot_sparse(prepare_for_plot(tm_2, 'updates'), 'TM_2.png', 'Transition Matrix (Two Rings)', 'outputs/probTraj')
+# tm_2 = TM(trajectories_twoRing).make_tm()
+# plot_sparse(prepare_for_plot(tm_2, 'updates'), 'TM_2.png', 'Transition Matrix (Two Rings)', 'outputs/probTraj')
 
-tm_3 = TM(probabilistic_trajectories).make_tm()
-plot_sparse(prepare_for_plot(tm_3, 'updates'), 'TM_3.png', 'Transition Matrix (Three Rings)', 'outputs/probTraj')
-plot_dense(prepare_for_plot(tm_3, 'updates'), 'TM_3_Dense.png', 'Transition Matrix (Probabilistic)', 'outputs/probTraj')
-
+# tm_3 = TM(trajectories_threeRing).make_tm()
+# plot_sparse(prepare_for_plot(tm_3, 'updates'), 'TM_3.png', 'Transition Matrix (Three Rings)', 'outputs/probTraj')
 
 
-## 2.3 - Time-inhomogeneous Trajectories: Probabilistic
+
+
+
+
+
+
+
+
+### 3 - TIME-INHOMOGENEOUS SIMULATION:
+
+## 3.0 - Time-inhomogeneous Trajectories: Probabilistic
 ## Paremeters are subjected to change
-time_tm_3 = TM(time_inhomogeneous_probabilistic_trajectories).make_tm()
-plot_dense(prepare_for_plot(time_tm_3, 'updates'), 'TI_TM_3.png', 'Time Inhomogeneous Transition Matrix (Probabilistic)', 'outputs/time_inhomo')
+# time_inhomogeneous_prob_traj_0 = Time_inhomo(probabilistic_trajectories, 1, 5, 2, 3).make_ti_traj()
+# time_tm_0 = TM(time_inhomogeneous_prob_traj_0).make_tm()
+# plot_dense(prepare_for_plot(time_tm_0, 'updates'), 'TI_TM_0.png', 'Transition Matrix (2pm to 3pm)', 'outputs/time_inhomo')
+
+time_inhomogeneous_prob_traj_1 = Time_inhomo(probabilistic_trajectories, 1, 5, 13, 18).make_ti_traj()
+time_tm_1 = TM(time_inhomogeneous_prob_traj_1).make_tm()
+# plot_dense(prepare_for_plot(time_tm_1, 'updates'), 'TI_TM_1.png', 'Transition Matrix (1pm to 6pm)', 'outputs/time_inhomo')
+
+time_inhomogeneous_prob_traj_2 = Time_inhomo(probabilistic_trajectories, 1, 5, 18, 19).make_ti_traj()
+time_tm_2 = TM(time_inhomogeneous_prob_traj_2).make_tm()
+# plot_dense(prepare_for_plot(time_tm_2, 'updates'), 'TI_TM_2.png', 'Transition Matrix (6pm to 7pm)', 'outputs/time_inhomo')
 
 
-
-
-### 3 - SIMULATION:
 
 ## 3.1 - Stationary Distribution:
 
+# Initial vector:
+# init_vector = Vectorization(time_inhomogeneous_prob_traj_1)\
+#               .process()\
+#               .rdd.map(lambda x: vectorize(x))\
+#               .toDF(['ml_SparseVector', 'np_vector'])
+matrix_1 = prepare_for_plot(time_tm_1, 'updates').toarray()
 
-def vectorize(x):
+# init_vector_dev = stationary(50, init_vector, matrix_1)
+# init_vector_dev = init_vector_dev.loc[:, (init_vector_dev != 0).any(axis = 0)]
 
-    n = x.n
-    col = x.col
-    val = x.val
-    ml_SparseVector = Vectors.sparse(114+1, col, val)
-    np_vector = ml_SparseVector.toArray().tolist()
+# vector_1 = init_vector_dev.iloc[[0, -1]]
 
-    return (n, ml_SparseVector, np_vector) 
+# Next vector:
+# next_vector = vectorConverge(spark, init_vector_dev)\
+#               .rdd.map(lambda x: vectorize(x))\
+#               .toDF(['ml_SparseVector', 'np_vector'])
+matrix_2 = prepare_for_plot(time_tm_2, 'updates').toarray()
 
+# next_vector_dev = stationary(50, next_vector, matrix_2)
+# next_vector_dev = next_vector_dev.loc[:, (next_vector_dev != 0).any(axis = 0)]
 
-vector_data = Vectorization(time_inhomogeneous_probabilistic_trajectories)\
-              .process()\
-              .rdd.map(lambda x: vectorize(x))\
-              .toDF(['n', 'ml_SparseVector', 'np_vector'])
+# vector_2 = next_vector_dev.iloc[-1:]
 
-matrix = prepare_for_plot(TM(time_inhomogeneous_probabilistic_trajectories).make_tm(), 'updates').toarray()
+# Testing for convergence:
+# plot_trend(init_vector_dev, 'SD1_dev.png', 'Convergence Testing (Phase 1)', 'outputs/simulation')
+# plot_trend(next_vector_dev, 'SD2_dev.png', 'Convergence Testing (Phase 2)', 'outputs/simulation')
 
-
-def stationary(vector):
-
-    n = vector.first()['n']
-    current_sv = vector.first()['ml_SparseVector']
-    current_v = vector.first()['np_vector']
-    res = np.array([current_v])
-
-    for j in range(n-1):
-
-        next_v = (current_sv.dot(matrix)).tolist()
-        res = np.append( res, np.array([next_v]), axis = 0 )
-        d = {x: next_v[x] for x in np.nonzero(next_v)[0]}
-        next_sv = Vectors.sparse(len(next_v), d)
-        current_sv = next_sv
-
-    stationary_vector = pd.DataFrame(res)
-
-    return stationary_vector
-
-
-plot_vector(stationary(vector_data), 'SD_dev.png', 'Stationary Distribution', 'outputs/simulation')
-plot_vector_bar(stationary(vector_data), 'SD.png', 'Stationary Distribution', 'outputs/simulation')
-
+# Comparison: Beginning versus End
+# res = vector_1.append(vector_2).set_index([pd.Index([0,1,2])])
+# plot_result(res, 'SD.png', 'Mobility Trend', 'outputs/simulation')
 
 
 
 
 
 ## 3.2 - Simulate discrete markov chain:
-w1 = Window.partitionBy(['user_id']).orderBy(F.lit('A'))
-init_state = time_inhomogeneous_probabilistic_trajectories\
-             .withColumn('i', F.row_number().over(w1))\
+
+# Get initial state for each user
+window = Window.partitionBy(['user_id']).orderBy(F.lit('A'))
+
+init_state = time_inhomogeneous_prob_traj_1\
+             .withColumn('i', F.row_number().over(window))\
              .filter(F.col('i') == 1).select('user_id', 'voronoi_id')
 
-def randomize(current_row):
-    seed(4)
-    r = np.random.uniform(0.0, 1.0)
-    cum = np.cumsum(current_row)
-    m = (np.where(cum < r))[0]
-    nextState = m[len(m)-1]+1
-    return nextState
+seed(0)
+sim_traj = spark.createDataFrame(simulate(init_state, matrix_1, 150, matrix_2, 50))
 
-def simulate(data):
+sim_traj = sim_traj.withColumn('simulated_traj', F.explode(F.split(F.col('simulated_traj'), ',')))\
+                   .withColumn('simulated_traj', F.regexp_replace('simulated_traj', '\\[', ''))\
+                   .withColumn('simulated_traj', F.regexp_replace('simulated_traj', '\\]', ''))\
+                   .withColumn('simulated_traj', F.col('simulated_traj').cast(IntegerType()))\
+                   .withColumn('i', F.row_number().over(window))
 
-    df = data.toPandas()
-    P = matrix
-
-    for i in df.index:
-        currentState = df['voronoi_id'][i]
-        simulated_traj = [currentState.item()]
-
-        for x in range(1000):
-            currentRow = np.ma.masked_values((P[currentState]), 0.0)
-            nextState = randomize(currentRow)
-            simulated_traj = simulated_traj + [nextState.item()]
-            currentState = nextState
-        
-        df.at[i, 'simulated_traj'] = str(simulated_traj)
-
-    return df
-
-init_sim = Spark.createDataFrame(simulate(init_state))
-
-w2 = Window.partitionBy(['user_id']).orderBy(F.lit('A'))
-init_sim = init_sim.withColumn('simulated_traj', F.explode(F.split(F.col('simulated_traj'), ',')))\
-         .withColumn('simulated_traj', F.regexp_replace('simulated_traj', '\\[', ''))\
-         .withColumn('simulated_traj', F.regexp_replace('simulated_traj', '\\]', ''))\
-         .withColumn('simulated_traj', F.col('simulated_traj').cast(IntegerType()))\
-         .withColumn('i', F.row_number().over(w2))\
-         .select('user_id', 'simulated_traj', 'i')
-
-
-sim_traj = init_sim.join(F.broadcast(threeRing_data), init_sim.simulated_traj == threeRing_data.voronoi_id, how = 'inner')\
-              .orderBy(['user_id', 'i']).select('user_id', 'simulated_traj', 'states', 'i')
-
-
-simulation = Simulation(sim_traj).process()
+simulation = Simulation(sim_traj, oneRing_data).process()
 prepare_for_sim_plot = pd.DataFrame(np.vstack(simulation.toPandas()['vector']))
+# plot_sim_result(prepare_for_sim_plot, 'Sim.png', 'Simulation Result', 'outputs/simulation')
 
 
-plot_vector(prepare_for_sim_plot, 'Sim_dev.png', 'Simulation', 'outputs/simulation')
-plot_vector_bar(prepare_for_sim_plot, 'Sim.png', 'Simulation Converge', 'outputs/simulation')
-
-
+simulation_TM = Simulation(sim_traj, oneRing_data).reformulate_TM()
+sim_time_tm = TM(simulation_TM).make_sim_tm()
+# plot_dense(prepare_for_plot(sim_time_tm, 'updates'), 'SIM_TI_TM.png', 'Simulated Transition Matrix (1pm to 7pm)', 'outputs/simulation')
+sim_time_tm.toPandas().to_csv('sim_tm.csv')

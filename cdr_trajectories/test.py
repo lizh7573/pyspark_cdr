@@ -1,20 +1,19 @@
 
-
+from pyspark.sql import SparkSession
 import pyspark.sql.functions as F
-from cdr_trajectories.constants import Spark
+from pyspark.sql import Window
+# from cdr_trajectories.constants import Spark
+from pyspark.sql import Row
+from pyspark.sql.types import ArrayType, IntegerType, StringType, FloatType
 
-mpn_file = 'data/mpn/*'
+spark = SparkSession.builder\
+    .enableHiveSupport()\
+    .appName('cdr_trajectories')\
+    .getOrCreate()
 
-Spark.conf.set('spark.sql.shuffle.partitions')
 
-df_mpn = Spark.read.format("csv")\
-              .option("inferSchema", "true")\
-              .option("header", "true")\
-              .option("sep", ";")\
-              .load(mpn_file)
 
-df_mpn.write.mode('overwrite').parquet('df_mpn.parquet')
+test = spark.range(1, 11)\
+            .withColumn('rand', F.round(F.rand(seed=0)*114, 0).cast(IntegerType()))
 
-parquet_mpn = Spark.read.parquet('df_mpn.parquet')
-
-print()
+test.show()

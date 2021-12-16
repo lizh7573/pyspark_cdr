@@ -6,15 +6,16 @@ Processing Ring Datasets
 import pyspark.sql.functions as F
 from pyspark.sql import Window
 from pyspark.sql.types import IntegerType, FloatType, ArrayType
-from cdr_trajectories.constants import ring_fraction, Spark
+from cdr_trajectories.constants import ring_fraction
 
 
 
 class Preprocess:
 
-    def __init__(self, path):
+    def __init__(self, spark, path):
+        self.spark = spark
         self.path = path
-        self.df = Spark.read.format("csv").load(self.path)
+        self.df = self.spark.read.format("csv").load(self.path)
 
     def read(self):
         w = Window().orderBy(F.lit('A'))
@@ -23,11 +24,11 @@ class Preprocess:
         return self.df
 
     def seperate_adjNum(self):
-        self.df = Spark.createDataFrame(self.df.toPandas().iloc[::2])
+        self.df = self.spark.createDataFrame(self.df.toPandas().iloc[::2])
         return self.df
 
     def seperate_adjMem(self):
-        self.df = Spark.createDataFrame(self.df.toPandas().iloc[1::2])
+        self.df = self.spark.createDataFrame(self.df.toPandas().iloc[1::2])
         return self.df
 
     def adjNum(self):
@@ -139,6 +140,7 @@ class Ring:
            .withColumn('props', F.concat('selfProp', '1st_adjProp'))\
            .withColumn('neighbors', F.split(F.col('neighbors'), ' ').cast(ArrayType(IntegerType())))\
            .withColumn('props', F.split(F.col('props'), ' ').cast(ArrayType(FloatType())))\
+           .withColumn('props', F.expr("transform(props, x -> x / 0.74)"))\
            .drop('row', 'selfProp', '1st_adjProp', '1st_adj')
         return self.df
 
@@ -148,6 +150,7 @@ class Ring:
            .withColumn('props', F.concat('selfProp', '1st_adjProp', '2nd_adjProp'))\
            .withColumn('neighbors', F.split(F.col('neighbors'), ' ').cast(ArrayType(IntegerType())))\
            .withColumn('props', F.split(F.col('props'), ' ').cast(ArrayType(FloatType())))\
+           .withColumn('props', F.expr("transform(props, x -> x / 0.89)"))\
            .drop('row', 'selfProp', '1st_adjProp', '2nd_adjProp', '1st_adj', '2nd_adj')
         return self.df
 
@@ -157,6 +160,7 @@ class Ring:
            .withColumn('props', F.concat('selfProp', '1st_adjProp', '2nd_adjProp', '3rd_adjProp'))\
            .withColumn('neighbors', F.split(F.col('neighbors'), ' ').cast(ArrayType(IntegerType())))\
            .withColumn('props', F.split(F.col('props'), ' ').cast(ArrayType(FloatType())))\
+           .withColumn('props', F.expr("transform(props, x -> x / 0.95)"))\
            .drop('row', 'selfProp', '1st_adjProp', '2nd_adjProp', '3rd_adjProp', '1st_adj', '2nd_adj', '3rd_adj')
         return self.df
 
@@ -193,15 +197,15 @@ class Ring:
 
 
 
-def get_oneRingData(firstRing_file, secondRing_file, thirdRing_file):
+def get_oneRingData(spark, firstRing_file, secondRing_file, thirdRing_file):
 
-    firstRing_adjNum = Preprocess(firstRing_file).adjNum()
-    secondRing_adjNum = Preprocess(secondRing_file).adjNum()
-    thirdRing_adjNum = Preprocess(thirdRing_file).adjNum()
+    firstRing_adjNum = Preprocess(spark, firstRing_file).adjNum()
+    secondRing_adjNum = Preprocess(spark, secondRing_file).adjNum()
+    thirdRing_adjNum = Preprocess(spark, thirdRing_file).adjNum()
 
-    firstRing_adjMem = Preprocess(firstRing_file).adjMem()
-    secondRing_adjMem = Preprocess(secondRing_file).adjMem()
-    thirdRing_adjMem = Preprocess(thirdRing_file).adjMem()
+    firstRing_adjMem = Preprocess(spark, firstRing_file).adjMem()
+    secondRing_adjMem = Preprocess(spark, secondRing_file).adjMem()
+    thirdRing_adjMem = Preprocess(spark, thirdRing_file).adjMem()
 
     adjNum_data = Ring_adjNum(firstRing_adjNum, secondRing_adjNum, thirdRing_adjNum).get_adjNum()
     adjMem_data = Ring_adjMem(firstRing_adjMem, secondRing_adjMem, thirdRing_adjMem).get_adjMem()
@@ -211,15 +215,15 @@ def get_oneRingData(firstRing_file, secondRing_file, thirdRing_file):
     return oneRing_data
 
 
-def get_twoRingData(firstRing_file, secondRing_file, thirdRing_file):
+def get_twoRingData(spark, firstRing_file, secondRing_file, thirdRing_file):
 
-    firstRing_adjNum = Preprocess(firstRing_file).adjNum()
-    secondRing_adjNum = Preprocess(secondRing_file).adjNum()
-    thirdRing_adjNum = Preprocess(thirdRing_file).adjNum()
+    firstRing_adjNum = Preprocess(spark, firstRing_file).adjNum()
+    secondRing_adjNum = Preprocess(spark, secondRing_file).adjNum()
+    thirdRing_adjNum = Preprocess(spark, thirdRing_file).adjNum()
 
-    firstRing_adjMem = Preprocess(firstRing_file).adjMem()
-    secondRing_adjMem = Preprocess(secondRing_file).adjMem()
-    thirdRing_adjMem = Preprocess(thirdRing_file).adjMem()
+    firstRing_adjMem = Preprocess(spark, firstRing_file).adjMem()
+    secondRing_adjMem = Preprocess(spark, secondRing_file).adjMem()
+    thirdRing_adjMem = Preprocess(spark, thirdRing_file).adjMem()
 
     adjNum_data = Ring_adjNum(firstRing_adjNum, secondRing_adjNum, thirdRing_adjNum).get_adjNum()
     adjMem_data = Ring_adjMem(firstRing_adjMem, secondRing_adjMem, thirdRing_adjMem).get_adjMem()
@@ -229,15 +233,15 @@ def get_twoRingData(firstRing_file, secondRing_file, thirdRing_file):
     return twoRing_data
 
 
-def get_threeRingData(firstRing_file, secondRing_file, thirdRing_file):
+def get_threeRingData(spark, firstRing_file, secondRing_file, thirdRing_file):
 
-    firstRing_adjNum = Preprocess(firstRing_file).adjNum()
-    secondRing_adjNum = Preprocess(secondRing_file).adjNum()
-    thirdRing_adjNum = Preprocess(thirdRing_file).adjNum()
+    firstRing_adjNum = Preprocess(spark, firstRing_file).adjNum()
+    secondRing_adjNum = Preprocess(spark, secondRing_file).adjNum()
+    thirdRing_adjNum = Preprocess(spark, thirdRing_file).adjNum()
 
-    firstRing_adjMem = Preprocess(firstRing_file).adjMem()
-    secondRing_adjMem = Preprocess(secondRing_file).adjMem()
-    thirdRing_adjMem = Preprocess(thirdRing_file).adjMem()
+    firstRing_adjMem = Preprocess(spark, firstRing_file).adjMem()
+    secondRing_adjMem = Preprocess(spark, secondRing_file).adjMem()
+    thirdRing_adjMem = Preprocess(spark, thirdRing_file).adjMem()
 
     adjNum_data = Ring_adjNum(firstRing_adjNum, secondRing_adjNum, thirdRing_adjNum).get_adjNum()
     adjMem_data = Ring_adjMem(firstRing_adjMem, secondRing_adjMem, thirdRing_adjMem).get_adjMem()
