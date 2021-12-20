@@ -13,7 +13,25 @@ spark = SparkSession.builder\
 
 
 
-test = spark.range(1, 11)\
-            .withColumn('rand', F.round(F.rand(seed=0)*114, 0).cast(IntegerType()))
+test = spark.range(1, 4)
+            # .withColumn('rand', F.round(F.rand(seed=0)*114, 0).cast(IntegerType()))
 
-test.show()
+def rand(data, n):
+
+    df = data
+
+    for i in range(n-1):
+        df = df.union(data)
+
+    window = Window.partitionBy(['id']).orderBy(F.lit('A'))
+
+    df = df.withColumn('i', F.row_number().over(window))\
+           .withColumn('rand', F.round(F.rand(seed=0)*114, 0).cast(IntegerType()))\
+           .withColumnRenamed('id', 'user_id')
+
+    return df
+
+test2 = rand(test, 5)
+
+test2.show()
+

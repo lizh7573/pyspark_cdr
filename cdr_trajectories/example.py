@@ -23,7 +23,7 @@ from cdr_trajectories.OD import OD
 from cdr_trajectories.TM import TM
 from cdr_trajectories.simulation import Vectorization, Simulation
 from cdr_trajectories.udfs import prepare_for_plot, plot_sparse, plot_dense, vectorize, stationary,\
-                                  vectorConverge, plot_trend, plot_result, simulate, plot_sim_result
+                                  vectorConverge, plot_trend, plot_result, simulate, plot_sim_result, rand_state
 
 
 spark = SparkSession.builder\
@@ -113,12 +113,12 @@ probabilistic_trajectories = trajectories_oneRing
 # time_tm_0 = TM(time_inhomogeneous_prob_traj_0).make_tm()
 # plot_dense(prepare_for_plot(time_tm_0, 'updates'), 'TI_TM_0.png', 'Transition Matrix (2pm to 3pm)', 'outputs/time_inhomo')
 
-time_inhomogeneous_prob_traj_1 = Time_inhomo(probabilistic_trajectories, 1, 5, 13, 18).make_ti_traj()
-time_tm_1 = TM(time_inhomogeneous_prob_traj_1).make_tm()
+# time_inhomogeneous_prob_traj_1 = Time_inhomo(probabilistic_trajectories, 1, 5, 13, 18).make_ti_traj()
+# time_tm_1 = TM(time_inhomogeneous_prob_traj_1).make_tm()
 # plot_dense(prepare_for_plot(time_tm_1, 'updates'), 'TI_TM_1.png', 'Transition Matrix (1pm to 6pm)', 'outputs/time_inhomo')
 
-time_inhomogeneous_prob_traj_2 = Time_inhomo(probabilistic_trajectories, 1, 5, 18, 19).make_ti_traj()
-time_tm_2 = TM(time_inhomogeneous_prob_traj_2).make_tm()
+# time_inhomogeneous_prob_traj_2 = Time_inhomo(probabilistic_trajectories, 1, 5, 18, 19).make_ti_traj()
+# time_tm_2 = TM(time_inhomogeneous_prob_traj_2).make_tm()
 # plot_dense(prepare_for_plot(time_tm_2, 'updates'), 'TI_TM_2.png', 'Transition Matrix (6pm to 7pm)', 'outputs/time_inhomo')
 
 
@@ -130,7 +130,7 @@ time_tm_2 = TM(time_inhomogeneous_prob_traj_2).make_tm()
 #               .process()\
 #               .rdd.map(lambda x: vectorize(x))\
 #               .toDF(['ml_SparseVector', 'np_vector'])
-matrix_1 = prepare_for_plot(time_tm_1, 'updates').toarray()
+# matrix_1 = prepare_for_plot(time_tm_1, 'updates').toarray()
 
 # init_vector_dev = stationary(50, init_vector, matrix_1)
 # init_vector_dev = init_vector_dev.loc[:, (init_vector_dev != 0).any(axis = 0)]
@@ -141,7 +141,7 @@ matrix_1 = prepare_for_plot(time_tm_1, 'updates').toarray()
 # next_vector = vectorConverge(spark, init_vector_dev)\
 #               .rdd.map(lambda x: vectorize(x))\
 #               .toDF(['ml_SparseVector', 'np_vector'])
-matrix_2 = prepare_for_plot(time_tm_2, 'updates').toarray()
+# matrix_2 = prepare_for_plot(time_tm_2, 'updates').toarray()
 
 # next_vector_dev = stationary(50, next_vector, matrix_2)
 # next_vector_dev = next_vector_dev.loc[:, (next_vector_dev != 0).any(axis = 0)]
@@ -163,27 +163,46 @@ matrix_2 = prepare_for_plot(time_tm_2, 'updates').toarray()
 ## 3.2 - Simulate discrete markov chain:
 
 # Get initial state for each user
-window = Window.partitionBy(['user_id']).orderBy(F.lit('A'))
+# window = Window.partitionBy(['user_id']).orderBy(F.lit('A'))
 
-init_state = time_inhomogeneous_prob_traj_1\
-             .withColumn('i', F.row_number().over(window))\
-             .filter(F.col('i') == 1).select('user_id', 'voronoi_id')
+# init_state = time_inhomogeneous_prob_traj_1\
+#              .withColumn('i', F.row_number().over(window))\
+#              .filter(F.col('i') == 1).select('user_id', 'voronoi_id')
 
-seed(0)
-sim_traj = spark.createDataFrame(simulate(init_state, matrix_1, 150, matrix_2, 50))
+# seed(0)
+# sim_traj = spark.createDataFrame(simulate(init_state, matrix_1, 150, matrix_2, 50))
 
-sim_traj = sim_traj.withColumn('simulated_traj', F.explode(F.split(F.col('simulated_traj'), ',')))\
-                   .withColumn('simulated_traj', F.regexp_replace('simulated_traj', '\\[', ''))\
-                   .withColumn('simulated_traj', F.regexp_replace('simulated_traj', '\\]', ''))\
-                   .withColumn('simulated_traj', F.col('simulated_traj').cast(IntegerType()))\
-                   .withColumn('i', F.row_number().over(window))
+# sim_traj = sim_traj.withColumn('simulated_traj', F.explode(F.split(F.col('simulated_traj'), ',')))\
+#                    .withColumn('simulated_traj', F.regexp_replace('simulated_traj', '\\[', ''))\
+#                    .withColumn('simulated_traj', F.regexp_replace('simulated_traj', '\\]', ''))\
+#                    .withColumn('simulated_traj', F.col('simulated_traj').cast(IntegerType()))\
+#                    .withColumn('i', F.row_number().over(window))
 
-simulation = Simulation(sim_traj, oneRing_data).process()
-prepare_for_sim_plot = pd.DataFrame(np.vstack(simulation.toPandas()['vector']))
+# simulation = Simulation(sim_traj, oneRing_data).process()
+# prepare_for_sim_plot = pd.DataFrame(np.vstack(simulation.toPandas()['vector']))
 # plot_sim_result(prepare_for_sim_plot, 'Sim.png', 'Simulation Result', 'outputs/simulation')
 
 
-simulation_TM = Simulation(sim_traj, oneRing_data).reformulate_TM()
-sim_time_tm = TM(simulation_TM).make_sim_tm()
+# simulation_TM = Simulation(sim_traj, oneRing_data).reformulate_TM()
+# sim_time_tm = TM(simulation_TM).make_sim_tm()
 # plot_dense(prepare_for_plot(sim_time_tm, 'updates'), 'SIM_TI_TM.png', 'Simulated Transition Matrix (1pm to 7pm)', 'outputs/simulation')
-sim_time_tm.toPandas().to_csv('sim_tm.csv')
+
+
+
+
+### 4 - SCALIBILITY TEST IN DATABRICKS
+
+# Create Random states
+# Paremeters are subjected to change (randUser: number of users; randState: number of frequency)
+randUser = spark.range(1, 101)
+randState = rand_state(randUser, 24)
+
+# Test Scalability with Transition Matrix
+test_TM = Simulation(randState, oneRing_data).reformulate_TM()
+test_tm = TM(test_TM).make_sim_tm()
+plot_dense(prepare_for_plot(test_tm, 'updates'), 'TEST_TM.png', 'Scalability Test - Simulated Transition Matrix', 'outputs/scalability')
+
+
+
+
+

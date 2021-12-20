@@ -9,9 +9,11 @@ import numpy as np
 import pandas as pd
 import scipy.sparse as sparse
 import matplotlib.pyplot as plt
+import pyspark.sql.functions as F
 from random import seed, random
 from pyspark.ml.linalg import Vectors
-import pyspark.sql.functions as F
+from pyspark.sql import Window
+from pyspark.sql.types import IntegerType
 
 
 
@@ -201,6 +203,22 @@ def plot_sim_result(vector, fname, title, dirname):
     plt.xticks(range(0, 114+1, 10))
     plt.title(title, fontsize = 20)
     plt.savefig(os.path.join(dirname, fname))
+
+
+def rand_state(data, n):
+
+    df = data
+
+    for i in range(n-1):
+        df = df.union(data)
+
+    window = Window.partitionBy(['id']).orderBy(F.lit('A'))
+
+    df = df.withColumn('i', F.row_number().over(window))\
+           .withColumn('simulated_traj', F.round(F.rand(seed=0)*114, 0).cast(IntegerType()))\
+           .withColumnRenamed('id', 'user_id')
+
+    return df
 
 
 
