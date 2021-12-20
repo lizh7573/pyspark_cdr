@@ -51,10 +51,9 @@ class Ring_adjNum:
         self.third = third
 
     def join(self):
-        w = Window().orderBy(F.lit('A'))
-        self.df = self.first.withColumn('row', F.row_number().over(w))\
-                .join(self.second.withColumn('row', F.row_number().over(w)), ['row'])\
-                .join(self.third.withColumn('row', F.row_number().over(w)), ['row'])\
+        self.df = self.first.withColumn('row', F.monotonically_increasing_id())\
+                .join(self.second.withColumn('row', F.monotonically_increasing_id()), ['row'])\
+                .join(self.third.withColumn('row', F.monotonically_increasing_id()), ['row'])\
                 .toDF('row', '1st', '2nd', '3rd')
         return self.df
 
@@ -85,10 +84,9 @@ class Ring_adjMem:
         self.third = third
 
     def process(self):
-        w = Window().orderBy(F.lit('A'))
-        self.df = self.first.withColumn('row', F.row_number().over(w))\
-                 .join(self.second.withColumn('row', F.row_number().over(w)), ['row'])\
-                 .join(self.third.withColumn('row', F.row_number().over(w)), ['row'])\
+        self.df = self.first.withColumn('row', F.monotonically_increasing_id())\
+                 .join(self.second.withColumn('row', F.monotonically_increasing_id()), ['row'])\
+                 .join(self.third.withColumn('row', F.monotonically_increasing_id()), ['row'])\
                  .toDF('row', '1st_adj', '2nd_adj', '3rd_adj')
         return self.df
 
