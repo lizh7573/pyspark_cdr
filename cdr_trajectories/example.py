@@ -87,14 +87,14 @@ plot_sparse(prepare_for_plot(tm_0, 'updates'), 'TM_0.png', 'Transition Matrix (D
 
 ## 2.2 - Probabilistic Trajectories:
 tm_1 = TM(probabilistic_trajectories).make_tm()
-plot_sparse(prepare_for_plot(tm_1, 'updates'), 'TM_1.png', 'Transition Matrix (One Ring)', 'outputs/probTraj')
+plot_sparse(prepare_for_plot(tm_1, 'updates'), 'TM_1.png', 'Transition Matrix (One Ring): 75% Confidence Level', 'outputs/probTraj')
 plot_dense(prepare_for_plot(tm_1, 'updates'), 'TM_1_Dense.png', 'Transition Matrix (Probabilistic)', 'outputs/probTraj')
 
 tm_2 = TM(trajectories_twoRing).make_tm()
-plot_sparse(prepare_for_plot(tm_2, 'updates'), 'TM_2.png', 'Transition Matrix (Two Rings)', 'outputs/probTraj')
+plot_sparse(prepare_for_plot(tm_2, 'updates'), 'TM_2.png', 'Transition Matrix (Two Rings): 90% Confidence Level', 'outputs/probTraj')
 
 tm_3 = TM(trajectories_threeRing).make_tm()
-plot_sparse(prepare_for_plot(tm_3, 'updates'), 'TM_3.png', 'Transition Matrix (Three Rings)', 'outputs/probTraj')
+plot_sparse(prepare_for_plot(tm_3, 'updates'), 'TM_3.png', 'Transition Matrix (Three Rings): 95% Confidence Level', 'outputs/probTraj')
 
 
 
@@ -113,13 +113,13 @@ time_inhomogeneous_prob_traj_0 = Time_inhomo(probabilistic_trajectories, 1, 5, 2
 time_tm_0 = TM(time_inhomogeneous_prob_traj_0).make_tm()
 plot_dense(prepare_for_plot(time_tm_0, 'updates'), 'TI_TM_0.png', 'Transition Matrix (2pm to 3pm)', 'outputs/time_inhomo')
 
-time_inhomogeneous_prob_traj_1 = Time_inhomo(probabilistic_trajectories, 1, 5, 13, 18).make_ti_traj()
+time_inhomogeneous_prob_traj_1 = Time_inhomo(probabilistic_trajectories, 1, 5, 12, 18).make_ti_traj()
 time_tm_1 = TM(time_inhomogeneous_prob_traj_1).make_tm()
 plot_dense(prepare_for_plot(time_tm_1, 'updates'), 'TI_TM_1.png', 'Transition Matrix (1pm to 6pm)', 'outputs/time_inhomo')
 
-time_inhomogeneous_prob_traj_2 = Time_inhomo(probabilistic_trajectories, 1, 5, 18, 19).make_ti_traj()
+time_inhomogeneous_prob_traj_2 = Time_inhomo(probabilistic_trajectories, 1, 5, 18, 20).make_ti_traj()
 time_tm_2 = TM(time_inhomogeneous_prob_traj_2).make_tm()
-plot_dense(prepare_for_plot(time_tm_2, 'updates'), 'TI_TM_2.png', 'Transition Matrix (6pm to 7pm)', 'outputs/time_inhomo')
+plot_dense(prepare_for_plot(time_tm_2, 'updates'), 'TI_TM_2.png', 'Transition Matrix (6pm to 8pm)', 'outputs/time_inhomo')
 
 
 
@@ -132,7 +132,7 @@ init_vector = Vectorization(time_inhomogeneous_prob_traj_1)\
               .toDF(['ml_SparseVector', 'np_vector'])
 matrix_1 = prepare_for_plot(time_tm_1, 'updates').toarray()
 
-init_vector_dev = stationary(50, init_vector, matrix_1)
+init_vector_dev = stationary(500, init_vector, matrix_1)
 init_vector_dev = init_vector_dev.loc[:, (init_vector_dev != 0).any(axis = 0)]
 
 vector_1 = init_vector_dev.iloc[[0, -1]]
@@ -143,7 +143,7 @@ next_vector = vectorConverge(spark, init_vector_dev)\
               .toDF(['ml_SparseVector', 'np_vector'])
 matrix_2 = prepare_for_plot(time_tm_2, 'updates').toarray()
 
-next_vector_dev = stationary(50, next_vector, matrix_2)
+next_vector_dev = stationary(100, next_vector, matrix_2)
 next_vector_dev = next_vector_dev.loc[:, (next_vector_dev != 0).any(axis = 0)]
 
 vector_2 = next_vector_dev.iloc[-1:]
@@ -163,29 +163,29 @@ plot_result(res, 'SD.png', 'Mobility Trend', 'outputs/simulation')
 ## 3.2 - Simulate discrete markov chain:
 
 # Get initial state for each user
-window = Window.partitionBy(['user_id']).orderBy(F.lit('A'))
+# window = Window.partitionBy(['user_id']).orderBy(F.lit('A'))
 
-init_state = time_inhomogeneous_prob_traj_1\
-             .withColumn('i', F.row_number().over(window))\
-             .filter(F.col('i') == 1).select('user_id', 'voronoi_id')
+# init_state = time_inhomogeneous_prob_traj_1\
+#              .withColumn('i', F.row_number().over(window))\
+#              .filter(F.col('i') == 1).select('user_id', 'voronoi_id')
 
-seed(0)
-sim_traj = spark.createDataFrame(simulate(init_state, matrix_1, 150, matrix_2, 50))
+# seed(0)
+# sim_traj = spark.createDataFrame(simulate(init_state, matrix_1, 150, matrix_2, 50))
 
-sim_traj = sim_traj.withColumn('simulated_traj', F.explode(F.split(F.col('simulated_traj'), ',')))\
-                   .withColumn('simulated_traj', F.regexp_replace('simulated_traj', '\\[', ''))\
-                   .withColumn('simulated_traj', F.regexp_replace('simulated_traj', '\\]', ''))\
-                   .withColumn('simulated_traj', F.col('simulated_traj').cast(IntegerType()))\
-                   .withColumn('i', F.row_number().over(window))
+# sim_traj = sim_traj.withColumn('simulated_traj', F.explode(F.split(F.col('simulated_traj'), ',')))\
+#                    .withColumn('simulated_traj', F.regexp_replace('simulated_traj', '\\[', ''))\
+#                    .withColumn('simulated_traj', F.regexp_replace('simulated_traj', '\\]', ''))\
+#                    .withColumn('simulated_traj', F.col('simulated_traj').cast(IntegerType()))\
+#                    .withColumn('i', F.row_number().over(window))
 
-simulation = Simulation(sim_traj, oneRing_data).process()
-prepare_for_sim_plot = pd.DataFrame(np.vstack(simulation.toPandas()['vector']))
-plot_sim_result(prepare_for_sim_plot, 'Sim.png', 'Simulation Result', 'outputs/simulation')
+# simulation = Simulation(sim_traj, oneRing_data).process()
+# prepare_for_sim_plot = pd.DataFrame(np.vstack(simulation.toPandas()['vector']))
+# plot_sim_result(prepare_for_sim_plot, 'Sim.png', 'Simulation Result', 'outputs/simulation')
 
 
-simulation_TM = Simulation(sim_traj, oneRing_data).reformulate_TM()
-sim_time_tm = TM(simulation_TM).make_sim_tm()
-plot_dense(prepare_for_plot(sim_time_tm, 'updates'), 'SIM_TI_TM.png', 'Simulated Transition Matrix (1pm to 7pm)', 'outputs/simulation')
+# simulation_TM = Simulation(sim_traj, oneRing_data).reformulate_TM()
+# sim_time_tm = TM(simulation_TM).make_sim_tm()
+# plot_dense(prepare_for_plot(sim_time_tm, 'updates'), 'SIM_TI_TM.png', 'Simulated Transition Matrix (1pm to 7pm)', 'outputs/simulation')
 
 
 
@@ -194,13 +194,13 @@ plot_dense(prepare_for_plot(sim_time_tm, 'updates'), 'SIM_TI_TM.png', 'Simulated
 
 # Create Random states
 # Paremeters are subjected to change (randUser: number of users; randState: number of frequency)
-randUser = spark.range(1, 101)
-randState = rand_state(randUser, 24)
+# randUser = spark.range(1, 101)
+# randState = rand_state(randUser, 24)
 
 # Test Scalability with Transition Matrix
-test_TM = Simulation(randState, oneRing_data).reformulate_TM()
-test_tm = TM(test_TM).make_sim_tm()
-plot_dense(prepare_for_plot(test_tm, 'updates'), 'TEST_TM.png', 'Scalability Test - Simulated Transition Matrix', 'outputs/scalability')
+# test_TM = Simulation(randState, oneRing_data).reformulate_TM()
+# test_tm = TM(test_TM).make_sim_tm()
+# plot_dense(prepare_for_plot(test_tm, 'updates'), 'TEST_TM.png', 'Scalability Test - Simulated Transition Matrix', 'outputs/scalability')
 
 
 
