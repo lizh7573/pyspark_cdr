@@ -73,7 +73,7 @@ probabilistic_trajectories = trajectories_oneRing
 ### 1 - ORIGIN-DESTINATION MATRICES:
 
 od = OD(probabilistic_trajectories).make_od()
-plot_dense(prepare_for_plot(od, 'updates'), 'OD.png', 'Origin-Destination Matrix', 'outputs/od')
+plot_dense(prepare_for_plot(od, 'updates'), 'OD.png', 'Origin-Destination Matrix: h = 2 hours', 'outputs/od')
 
 
 
@@ -163,29 +163,29 @@ plot_result(res, 'SD.png', 'Mobility Trend', 'outputs/simulation')
 ## 3.2 - Simulate discrete markov chain:
 
 # Get initial state for each user
-# window = Window.partitionBy(['user_id']).orderBy(F.lit('A'))
+window = Window.partitionBy(['user_id']).orderBy(F.lit('A'))
 
-# init_state = time_inhomogeneous_prob_traj_1\
-#              .withColumn('i', F.row_number().over(window))\
-#              .filter(F.col('i') == 1).select('user_id', 'voronoi_id')
+init_state = time_inhomogeneous_prob_traj_1\
+             .withColumn('i', F.row_number().over(window))\
+             .filter(F.col('i') == 1).select('user_id', 'voronoi_id')
 
-# seed(0)
-# sim_traj = spark.createDataFrame(simulate(init_state, matrix_1, 150, matrix_2, 50))
+seed(0)
+sim_traj = spark.createDataFrame(simulate(init_state, matrix_1, 150, matrix_2, 50))
 
-# sim_traj = sim_traj.withColumn('simulated_traj', F.explode(F.split(F.col('simulated_traj'), ',')))\
-#                    .withColumn('simulated_traj', F.regexp_replace('simulated_traj', '\\[', ''))\
-#                    .withColumn('simulated_traj', F.regexp_replace('simulated_traj', '\\]', ''))\
-#                    .withColumn('simulated_traj', F.col('simulated_traj').cast(IntegerType()))\
-#                    .withColumn('i', F.row_number().over(window))
+sim_traj = sim_traj.withColumn('simulated_traj', F.explode(F.split(F.col('simulated_traj'), ',')))\
+                   .withColumn('simulated_traj', F.regexp_replace('simulated_traj', '\\[', ''))\
+                   .withColumn('simulated_traj', F.regexp_replace('simulated_traj', '\\]', ''))\
+                   .withColumn('simulated_traj', F.col('simulated_traj').cast(IntegerType()))\
+                   .withColumn('i', F.row_number().over(window))
 
-# simulation = Simulation(sim_traj, oneRing_data).process()
-# prepare_for_sim_plot = pd.DataFrame(np.vstack(simulation.toPandas()['vector']))
-# plot_sim_result(prepare_for_sim_plot, 'Sim.png', 'Simulation Result', 'outputs/simulation')
+simulation = Simulation(sim_traj, oneRing_data).process()
+prepare_for_sim_plot = pd.DataFrame(np.vstack(simulation.toPandas()['vector']))
+plot_sim_result(prepare_for_sim_plot, 'Sim.png', 'Simulation Result', 'outputs/simulation')
 
 
-# simulation_TM = Simulation(sim_traj, oneRing_data).reformulate_TM()
-# sim_time_tm = TM(simulation_TM).make_sim_tm()
-# plot_dense(prepare_for_plot(sim_time_tm, 'updates'), 'SIM_TI_TM.png', 'Simulated Transition Matrix (1pm to 7pm)', 'outputs/simulation')
+simulation_TM = Simulation(sim_traj, oneRing_data).reformulate_TM()
+sim_time_tm = TM(simulation_TM).make_sim_tm()
+plot_dense(prepare_for_plot(sim_time_tm, 'updates'), 'SIM_TI_TM.png', 'Simulated Transition Matrix (12pm to 7pm)', 'outputs/simulation')
 
 
 
